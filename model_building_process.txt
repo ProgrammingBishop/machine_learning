@@ -31,6 +31,7 @@ Process
             - Fill in Missing Values
                 - Imputation
                 - Mean of Feature
+                - Fill with 'None' of '0'
         - Preprocess Data
             - Add New Features if Applicable
             - Handle Leverage Points/Outlier
