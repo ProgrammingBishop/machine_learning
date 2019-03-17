@@ -1,0 +1,56 @@
+Process
+    - Introduction
+        - Define the Problem
+            - Goal/Purpose of Model
+            - How Model Can be Used
+        - Explain the Data
+            - Highlight Features
+            - Where it is From
+            - Characteristics of the Data
+    - Global Functions
+        - Get Numerical Columns Function
+        - Get Categorical Columns Function
+        - Plot Functions
+    - Introduce Data
+        - Load in Data
+        - Explore the Data
+            - Distributions
+                - Numerical
+                - Categorical
+            - Correlations (If Goal Not Equal Best Accuracy)
+            - Possible New Features to Add
+            - Outliers
+            - Context for Data
+        - Train/Test Split
+    - Prepare Data for Train & Test
+        - Clean Data
+            - Remove Unnecessary Features
+            - Update Necessary Features to Numerical
+            - Update Necessary Features to Categorical
+            - Update Necessary Features to Rank
+            - Fill in Missing Values
+                - Imputation
+                - Mean of Feature
+        - Preprocess Data
+            - Add New Features if Applicable
+            - Handle Leverage Points/Outlier
+            - Handle Distribution Skewness of Numerical Data
+                - Winsorization
+                - Exponentiation
+                - Logarithmic
+            - Update Necessary Features to One-Hot-Encoded
+                - Bind Rows Train/Test
+                - One-Hot-Encode
+                - Unbind Rows Train/Test
+            - Standardize/Normalize Data
+    - Select Model
+        - Define Models to Use
+        - Obtain Optimal Parameters with Grid Search
+        - Compare Models
+            - Train
+            - Test
+            - Plot Results for Error/Accuracy
+        - Select Optimal Model
+    - Results
+        - Test Model on New Data
+        - Write up Findings
