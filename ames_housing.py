@@ -18,14 +18,17 @@ from sklearn.metrics         import mean_squared_error
 from scipy.special           import boxcox1p
 
 # Model Selection
-from sklearn.model_selection import RandomizedSearchCV, KFold
-from xgboost                 import XGBRegressor
-from sklearn.ensemble        import GradientBoostingRegressor
-from sklearn.linear_model    import Lasso, ElasticNet
-from sklearn.kernel_ridge    import KernelRidge
-from mlxtend.regressor       import StackingCVRegressor
-from keras.layers            import Dense, Dropout
-from keras.models            import Sequential
+from sklearn.model_selection     import RandomizedSearchCV
+from xgboost                     import XGBRegressor
+from sklearn.ensemble            import GradientBoostingRegressor
+from sklearn.linear_model        import Lasso, ElasticNet
+from sklearn.kernel_ridge        import KernelRidge
+from mlxtend.regressor           import StackingCVRegressor
+from keras.wrappers.scikit_learn import KerasRegressor
+from keras.layers                import Dense, Dropout
+from keras.models                import Sequential
+from keras.optimizers            import Adam
+from keras.constraints           import MaxNorm
 
 import lightgbm as lgb
 
@@ -54,8 +57,8 @@ test_raw  = pd.read_csv( data_path + 'test.csv' )
 # ==================================================
 # Kaggle suggests to remove some outliers for Garage Living Area
 
-# sns.distplot( x = train_raw[ 'GrLivArea' ], 
-#               y = train_raw[ 'SalePrice' ] )
+# sns.scatterplot( x = train_raw[ 'GrLivArea' ], 
+#                  y = train_raw[ 'SalePrice' ] )
 # plt.show()
 
 train_raw = train_raw.drop( train_raw[ ( train_raw[ 'GrLivArea' ] > 4000 ) & ( train_raw[ 'SalePrice' ] < 250000 ) ].index )
@@ -172,6 +175,7 @@ print( "Train: {} \nTest: {}".format( train_X.shape, test_X.shape ) )
 # ==================================================
 scaler         = RobustScaler()
 train_X_scaled = scaler.fit_transform( train_X )
+test_X_scaled  = scaler.fit( test_X )
 
 rmse_score = {
     'XGBRegressor'              : 0,
@@ -194,7 +198,7 @@ xgbm_grid = {
     'subsample'        : [ 0.25, 0.5, 0.75, 0.99 ]
 }
 
-xgbm = RandomizedSearchCV( XGBRegressor(), cv = 5, param_grid = xgbm_grid, n_jobs = -1, scoring = 'neg_mean_squared_error', n_iter = 15, verbose = 1 )
+xgbm = RandomizedSearchCV( XGBRegressor(), cv = 5, param_distributions = xgbm_grid, n_jobs = -1, scoring = 'neg_mean_squared_error', n_iter = 15, verbose = 1 )
 xgbm.fit( train_X, train_y )
 
 rmse_score[ 'XGBRegressor' ] = round( math.sqrt( -xgbm.best_score_ ), 4 )
@@ -210,8 +214,8 @@ gbr_grid = {
     'loss'              : [ 'huber' ]
 }
 
-gbr = RandomizedSearchCV( GradientBoostingRegressor(), cv = 5, param_grid = gbr_grid, n_jobs = -1, scoring = 'neg_mean_squared_error', n_iter = 15, verbose = 1 )
-gbr.fit( X_train, y_train )
+gbr = RandomizedSearchCV( GradientBoostingRegressor(), cv = 5, param_distributions = gbr_grid, n_jobs = -1, scoring = 'neg_mean_squared_error', n_iter = 15, verbose = 1 )
+gbr.fit( train_X, train_y )
 
 rmse_score[ 'GradientBoostingRegressor' ] = round( math.sqrt( -gbr.best_score_ ), 4 )
 
@@ -221,7 +225,7 @@ lasso_grid = {
     'max_iter' : [ 250, 500, 1000, 2000, 3500, 5000 ]
 }
 
-lasso = RandomizedSearchCV( Lasso(), cv = 5, param_grid = lasso_grid, n_jobs = -1, scoring = 'neg_mean_squared_error', n_iter = 15, verbose = 1 )
+lasso = RandomizedSearchCV( Lasso(), cv = 5, param_distributions = lasso_grid, n_jobs = -1, scoring = 'neg_mean_squared_error', n_iter = 20, verbose = 1 )
 lasso.fit( train_X_scaled, train_y )
 
 rmse_score[ 'Lasso' ] = round( math.sqrt( -lasso.best_score_ ), 4 )
@@ -230,22 +234,22 @@ rmse_score[ 'Lasso' ] = round( math.sqrt( -lasso.best_score_ ), 4 )
 kernel_grid = {
     'alpha'  : [ 0.001, 0.01, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9 ], 
     'kernel' : [ 'polynomial' ], 
-    'degree' : [ 2, 3 ], 
-    'coef0'  : [ 1, 1.5, 2, 2.5, 3 ]
+    'degree' : [ 2 ], 
+    'coef0'  : [ 5.0, 7.5, 10.0, 12.5, 15.0 ]
 }
 
-kridge = RandomizedSearchCV( KernelRidge(), cv = 5, param_grid = kernel_grid, n_jobs = -1, scoring = 'neg_mean_squared_error', n_iter = 15, verbose = 1 )
-kridge.fit( train_X, y_train )
+kridge = RandomizedSearchCV( KernelRidge(), cv = 5, param_distributions = kernel_grid, n_jobs = -1, scoring = 'neg_mean_squared_error', n_iter = 20, verbose = 1 )
+kridge.fit( train_X_scaled, train_y )
 
 rmse_score[ 'KernelRidge' ] = round( math.sqrt( -kridge.best_score_ ), 4 )
 
 # Elastic Net
 elastic_grid = {
-    'alpha'    : [ 0.0001, 0.0005, 0.001, 0.0015, 0.002, 0.01, 0.1, 1.0 ],
+    'alpha'    : [ 0.001, 0.0015, 0.002, 0.01, 0.1, 1.0 ],
     'l1_ratio' : [ 0.001, 0.01, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9 ]
 }
 
-elastic = RandomizedSearchCV( ElasticNet(), cv = 5, param_grid = elastic_grid, n_jobs = -1, scoring = 'neg_mean_squared_error', n_iter = 15, verbose = 1 )
+elastic = RandomizedSearchCV( ElasticNet(), cv = 5, param_distributions = elastic_grid, n_jobs = -1, scoring = 'neg_mean_squared_error', n_iter = 20, verbose = 1 )
 elastic.fit( train_X_scaled, train_y )
 
 rmse_score[ 'ElasticNet' ] = round( math.sqrt( -elastic.best_score_ ), 4 )
@@ -253,33 +257,75 @@ rmse_score[ 'ElasticNet' ] = round( math.sqrt( -elastic.best_score_ ), 4 )
 # LightGBM
 lgbm_grid = {
     'objective'               : [ 'regression' ],
-    'num_leaves'              : [ 2, 3, 4, 5, 6 ],
-    'learning_rate'           : [ 0.001, 0.01, 0.05, 0.1, 0.15, 0.2 ], 
-    'n_estimators'            : [ 250, 500, 1000, 2000, 3500, 5000 ],
-    'max_bin'                 : [ 30, 40, 50, 60, 70 ],
+    'num_leaves'              : [ 4, 5, 6 ],
+    'learning_rate'           : [ 0.01, 0.025, 0.05, 0.075, 0.1 ], 
+    'n_estimators'            : [ 1500, 2000, 2500 ],
+    'max_bin'                 : [ 60, 70, 90 ],
     'bagging_fraction'        : [ 0.25, 0.5, 0.75, 0.99 ],
-    'bagging_freq'            : [ 1, 3, 5, 7, 9 ], 
-    'feature_fraction'        : [ 0.25, 0.5, 0.75, 0.99 ]
-    'min_data_in_leaf'        : [ 1, 3, 5, 7, 9 ], 
-    'min_sum_hessian_in_leaf' : [ 5, 7, 10, 12, 15 ]
+    'bagging_freq'            : [ 5, 7, 10 ], 
+    'feature_fraction'        : [ 0.5, 0.75, 0.99 ],
+    'min_data_in_leaf'        : [ 2, 3, 4 ], 
+    'min_sum_hessian_in_leaf' : [ 12, 15, 17, 20 ]
 }
 
-lgbm = RandomizedSearchCV( lgb.LGBMRegressor(), cv = 5, param_grid = lgbm_grid, n_jobs = -1, scoring = 'neg_mean_squared_error', n_iter = 15, verbose = 1 )
+lgbm = RandomizedSearchCV( lgb.LGBMRegressor(), cv = 5, param_distributions = lgbm_grid, n_jobs = -1, scoring = 'neg_mean_squared_error', n_iter = 15, verbose = 1 )
 lgbm.fit( train_X, train_y )
 
 rmse_score[ 'LightGBM' ] = round( math.sqrt( -lgbm.best_score_ ), 4 )
 
 # NeuralNetwork
-def create_nueral_net():
+init_output = round( ( train_X_scaled.shape[1] + 1 ) / 2 )
+
+def create_nueral_net( output_dim   = init_output,
+                       dropout_rate = 0.1, 
+                       activation   = 'relu',
+                       learn_rate   = 0.01,
+                       beta_1       = 0.99,
+                       beta_2       = 0.99,
+                       loss         = 'mean_squared_error' ):
+
+    # Instantiate Model
     ann_model = Sequential()
+
+    # Hidden Layer 1
+    ann_model.add( Dense( input_dim          = train_X_scaled.shape[1],
+                          units              = output_dim, 
+                          kernel_initializer = 'uniform', 
+                          activation         = activation ) )
+
+    ann_model.add( Dropout( rate = ( 1 - dropout_rate ) ) )
+
+    # Hidden Layer 2
+    ann_model.add( Dense( units              = output_dim, 
+                          kernel_initializer = 'uniform', 
+                          activation         = activation ) )
+
+    ann_model.add( Dropout( rate = ( 1 - dropout_rate ) ) )
+
+    # Fully Connected Layer
+    ann_model.add( Dense( units = 1, kernel_initializer = 'uniform', activation = 'linear' ) )
+
+    # Compile Model
+    optimizer = Adam( lr = learn_rate, beta_1 = beta_1, beta_2 = beta_2 )
+    ann_model.compile( optimizer = optimizer, loss = loss, metrics = [ 'mse' ] )
     
-    return
+    return ann_model
+
 
 ann_grid = {
-    
+    'output_dim'   : [ 8, 16, 32, 64, init_output ],
+    'dropout_rate' : [ 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9 ],
+    'activation'   : [ 'relu', 'softmax', 'tanh', 'sigmoid' ],
+    'learn_rate'   : [ 0.0001, 0.01, 0.1, 0.2, 0.5, 0.75, 0.99 ],
+    'beta_1'       : [ 0.1, 0.3, 0.5, 0.7, 0.9, 0.99 ],
+    'beta_2'       : [ 0.1, 0.3, 0.5, 0.7, 0.9, 0.99 ],
+    'batch_size'   : [ 32, 64, 128 ],
+    'epochs'       : [ 100, 250, 500, 1000 ]
 }
 
-ann = RandomizedSearchCV( create_nueral_net(), cv = 5, param_grid = ann_grid, n_jobs = -1, scoring = 'neg_mean_squared_error', n_iter = 15, verbose = 1 )
+model = KerasRegressor( build_fn = create_nueral_net, verbose = 0 )
+
+ann = RandomizedSearchCV( model, cv = 5, param_distributions = ann_grid, n_jobs = 1, scoring = 'neg_mean_squared_error', n_iter = 10, verbose = 1 )
 ann.fit( train_X_scaled, train_y )
 
 rmse_score[ 'NeuralNetwork' ] = round( math.sqrt( -ann.best_score_ ), 4 )
@@ -292,19 +338,94 @@ print( pd.DataFrame( { 'RMSE' : rmse_score }, index = rmse_score.keys() ).sort_v
 
 # Build Stacked Ensemble Model
 # ==================================================
-stacked_model = StackingCVRegressor( regressors     = ( lasso_model, gbr_model, kridge_model, lgbm_model, xgbm_model ),
-                                     meta_regressor = elastic_model,
+# XGBRegressor
+xgbm_model = XGBRegressor(
+    colsample_bytree = xgbm.best_estimator_.colsample_bytree,
+    gamma            = xgbm.best_estimator_.gamma,
+    min_child_weight = xgbm.best_estimator_.min_child_weight,
+    n_estimators     = xgbm.best_estimator_.n_estimators,
+    reg_alpha        = xgbm.best_estimator_.reg_alpha,
+    reg_lambda       = xgbm.best_estimator_.reg_lambda,
+    subsample        = xgbm.best_estimator_.subsample
+)
+
+# GradientBoostingRegressor
+gbr_model = GradientBoostingRegressor( 
+    n_estimators      = gbr.best_estimator_.n_estimators,
+    learning_rate     = gbr.best_estimator_.learning_rate,
+    max_depth         = gbr.best_estimator_.max_depth,
+    max_features      = gbr.best_estimator_.max_features,
+    min_samples_leaf  = gbr.best_estimator_.min_samples_leaf,
+    min_samples_split = gbr.best_estimator_.min_samples_split,
+    loss              = gbr.best_estimator_.loss
+)
+
+# Lasso
+lasso_model =Lasso(
+    alpha    = lasso.best_estimator_.alpha,
+    max_iter = lasso.best_estimator_.max_iter
+)
+
+# KernelRidge
+kridge_model = KernelRidge(
+    alpha  = kridge.best_estimator_.alpha,
+    kernel = kridge.best_estimator_.kernel,
+    degree = kridge.best_estimator_.degree,
+    coef0  = kridge.best_estimator_.coef0
+)
+
+# ElasticNet
+elastic_model = ElasticNet(
+    alpha    = elastic.best_estimator_.alpha,
+    l1_ratio = elastic.best_estimator_.l1_ratio
+)
+
+# LightGBM
+lgbm_model = lgb.LGBMRegressor(
+    objective               = lgbm.best_estimator_.objective,
+    num_leaves              = lgbm.best_estimator_.num_leaves,
+    learning_rate           = lgbm.best_estimator_.learning_rate,
+    n_estimators            = lgbm.best_estimator_.n_estimators,
+    max_bin                 = lgbm.best_estimator_.max_bin,
+    bagging_fraction        = lgbm.best_estimator_.bagging_fraction,
+    bagging_freq            = lgbm.best_estimator_.bagging_freq,
+    feature_fraction        = lgbm.best_estimator_.feature_fraction,
+    min_data_in_leaf        = lgbm.best_estimator_.min_data_in_leaf,
+    min_sum_hessian_in_leaf = lgbm.best_estimator_.min_sum_hessian_in_leaf,
+)
+
+# Neural Network
+ann_model = create_nueral_net(
+    output_dim        = ann.best_estimator_.output_dim,
+    dropout_rate      = ann.best_estimator_.dropout_rate,
+    activation        = ann.best_estimator_.activation,
+    learn_rate        = ann.best_estimator_.learn_rate,
+    beta_1            = ann.best_estimator_.beta_1,
+    beta_2            = ann.best_estimator_.beta_2,
+    batch_size        = ann.best_estimator_.batch_size,   
+    epochs            = ann.best_estimator_.epochs
+)   
+
+
+# Execute Stacked Ensemble Model
+# ==================================================
+stacked_model = StackingCVRegressor( regressors     = (  ),
+                                     meta_regressor = ,
                                      cv = 5 )
 
-stacked_model.fit( train_X.values, train_y.values )
+stacked_model.fit( train_X_scaled.values, test_X_scaled.values )
 stacked_predict = np.expm1( stacked_model.predict( test_X.values ) )
+
+ensemble = ( 
+    stacked_predict * 1.00
+)
 
 
 # Generate Submission
 # ==================================================
 submission = pd.DataFrame(
     { 'Id'        : test_raw[ 'Id' ],
-      'SalePrice' : stacked_predict } 
+      'SalePrice' : ensemble } 
 )
 
 submission.to_csv( '.\\ames_housing_submission.csv', index = False )
