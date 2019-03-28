@@ -4,7 +4,6 @@ import os
 import math
 import warnings
 
-
 # Default Libraries
 import numpy             as np
 import pandas            as pd
@@ -12,8 +11,7 @@ import matplotlib.pyplot as plt
 import seaborn           as sns
 
 # Preprocessing
-from sklearn.preprocessing   import RobustScaler, MinMaxScaler
-from sklearn.model_selection import train_test_split
+from sklearn.preprocessing   import RobustScaler
 from sklearn.metrics         import mean_squared_error
 from scipy.special           import boxcox1p
 
@@ -25,7 +23,6 @@ from xgboost                     import XGBRegressor
 from sklearn.ensemble            import GradientBoostingRegressor
 from sklearn.linear_model        import Lasso, ElasticNet
 from sklearn.kernel_ridge        import KernelRidge
-from mlxtend.regressor           import StackingCVRegressor
 
 import lightgbm as lgb
 
@@ -53,11 +50,6 @@ test_raw  = pd.read_csv( data_path + 'test.csv' )
 # Correct Outliers
 # ==================================================
 # Kaggle suggests to remove some outliers for Garage Living Area
-
-# sns.scatterplot( x = train_raw[ 'GrLivArea' ], 
-#                  y = train_raw[ 'SalePrice' ] )
-# plt.show()
-
 train_raw = train_raw.drop( train_raw[ ( train_raw[ 'GrLivArea' ] > 4000 ) & ( train_raw[ 'SalePrice' ] < 250000 ) ].index )
 
 train_X = train_raw.drop( [ 'SalePrice', 'Id' ], axis = 1 )
@@ -139,7 +131,7 @@ full_X[ 'PavedDrive'   ].replace( { 'None' : 0, 'N' : 1, 'P' : 2, 'Y' : 3 }, inp
 # Add New Feature
 full_X[ 'TotalLivAreaSF' ] = full_X[ '1stFlrSF' ] + full_X[ '2ndFlrSF' ] + full_X[ 'TotalBsmtSF' ]
 full_X[ 'TotalPorch' ]     = full_X[ 'OpenPorchSF' ] + full_X[ 'EnclosedPorch' ] + full_X[ '3SsnPorch' ] + full_X[ 'ScreenPorch' ]
-full_X[ 'TotalBath' ]     = full_X[ 'BsmtFullBath' ] + ( full_X[ 'BsmtHalfBath' ] * 0.5 ) + full_X[ 'FullBath' ] + ( full_X[ 'HalfBath' ] * 0.5 )
+full_X[ 'TotalBath' ]      = full_X[ 'BsmtFullBath' ] + ( full_X[ 'BsmtHalfBath' ] * 0.5 ) + full_X[ 'FullBath' ] + ( full_X[ 'HalfBath' ] * 0.5 )
 
 # BoxCox Transformation
 categorical_features = list( get_categorical_features( full_X ) )
@@ -409,6 +401,8 @@ lgbm_model = lgb.LGBMRegressor(
 # Execute Stacked Ensemble Model
 # ==================================================
 # Stacked Ensemble Class Override
+# https://www.kaggle.com/serigne/stacked-regressions-top-4-on-leaderboard
+# The following class override performs slightly better than StackingCVRegressor
 class StackingAveragedModels(BaseEstimator, RegressorMixin, TransformerMixin):
     def __init__( self, base_models, meta_model, n_folds = 5 ):
         self.base_models = base_models
@@ -455,6 +449,7 @@ stacked_predict = np.expm1( stacked_model.predict( test_X.values ) )
 xgbm_predict    = np.expm1(    xgbm_model.predict( test_X ) )
 lgbm_predict    = np.expm1(    lgbm_model.predict( test_X ) )
 
+# Ensemble Model Averaging
 ensemble = ( 
       stacked_predict * 0.70
     + xgbm_predict    * 0.175
