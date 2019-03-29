@@ -93,7 +93,7 @@ print( len( full_X[ full_X[ 'Utilities' ] == 'AllPub' ] ) / len( full_X ) )
 full_X = full_X.drop( [ 'Utilities' ], axis = 1 )
 
 # Impute NaN
-full_X[ 'Functional' ]      = full_X["Functional"].fillna( 'Typ' )
+full_X[ 'Functional' ] = full_X["Functional"].fillna( 'Typ' )
 
 missing_with_mode           = [ 'Electrical', 'KitchenQual', 'Exterior1st', 'Exterior2nd', 'SaleType', 'MSZoning' ]
 full_X[ missing_with_mode ] = full_X[ missing_with_mode ].fillna( full_X.mode().iloc[0] )
@@ -460,8 +460,10 @@ ensemble = (
 # Generate Submission
 # ==================================================
 submission = pd.DataFrame(
-    { 'Id'        : test_raw[ 'Id' ],
-      'SalePrice' : ensemble } 
+    {
+        'Id'        : test_raw[ 'Id' ],
+        'SalePrice' : ensemble
+    } 
 )
 
 # Ranked in Top 24%
