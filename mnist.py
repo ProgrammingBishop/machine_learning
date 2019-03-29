@@ -4,7 +4,7 @@ import os
 import math
 import warnings
 
-warnings.filterwarnings("ignore")
+warnings.filterwarnings( 'ignore' )
 
 # Default Libraries
 import numpy             as np
@@ -14,29 +14,71 @@ import seaborn           as sns
 
 # Preprocessing
 from keras.preprocessing.image import ImageDataGenerator
+from keras.utils.np_utils      import to_categorical # One-Hot-Encode Labels
+
+
+# Global Functions
+# ==================================================
+def show_images( start_obs, df ):
+    '''
+    start_obs: index to start for digit display
+    df: pandas dataframe start_obs indexes from
+    '''
+    for index, image in enumerate( range( start_obs, ( start_obs + 9 ) ) ):
+        plt.subplot( 330 + 1 + index )
+        plt.imshow( np.matrix( df[ index ] ), 
+                    cmap = plt.get_cmap( 'gray' ) ) 
+    plt.show()
+
+
+def return_flow_batch( X, y ):
+    for X_batch, _ in datagen.flow( X, y, batch_size = 9 ):
+        for image in range( 0, 9 ):
+            plt.subplot( 330 + 1 + image )
+            plt.imshow( X_batch[ image ].reshape( 28, 28 ), 
+                        cmap = plt.get_cmap( 'gray' ) )
+        plt.show()
+        break
 
 
 # Load Data
 # ==================================================
+# Full DataFrames
 data_path = os.getcwd() + '\\..\\..\\data\\mnist\\'
-train_raw = data_path + 'train.csv'
-test_raw  = data_path + 'test.csv'
 
-test_datagen  = ImageDataGenerator( rescale = 1.0 / 255 )
-train_datagen = ImageDataGenerator( rescale         = 1.0 / 255,
-                                    shear_range     = 0.2,
-                                    zoom_range      = 0.2,
-                                    horizontal_flip = True )
+# Train
+full_train = pd.read_csv( data_path + 'train.csv' )
+full_test  = pd.read_csv( data_path + 'test.csv' )
 
-train_set = train_datagen.flow_from_directory( train_raw,
-                                               target_size = ( 64, 64 ),
-                                               batch_size  = 32,
-                                               class_mode  = 'binary' )
+train_X = full_train\
+            .drop( [ 'label' ], axis = 1 )\
+            .astype( 'float32' )\
+            .values.reshape( -1, 28, 28, 1 )
 
-test_set = test_datagen.flow_from_directory( test_raw,
-                                             target_size = ( 64, 64 ),
-                                             batch_size  = 32,
-                                             class_mode  = 'binary' )
+train_y = to_categorical( 
+    y           = full_train[ 'label' ], 
+    num_classes = len( set( full_train[ 'label' ] ) ) 
+)
+
+# Test
+test_X = full_test\
+            .astype( 'float32' )\
+            .values.reshape( -1, 28, 28, 1 )
+
+# Preview Digits
+show_images( 0, train_X )
+
+
+# Image Augmentation
+# ==================================================
+datagen = ImageDataGenerator(
+    featurewise_center            = True, 
+    featurewise_std_normalization = True,
+    zca_whitening                 = True
+)
+
+datagen.fit( train_X )
+
 
 
 # Generate Submission
