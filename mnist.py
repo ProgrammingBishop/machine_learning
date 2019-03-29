@@ -129,11 +129,17 @@ return_flow_batch( X_train, y_train )
 # Construct Convolutional Neural Network
 # ==================================================
 # Build CNN Architecure
-def build_cnn():
+def build_cnn( 
+    optimizer   = 'RMSProp',
+    kernel_size = 5,
+    strides     = 1
+):
     '''
-    optimizer: 1 = RMSProp / 2 = Adam
+    optimizer: Either "RMSProp" or "Adam" (default is RMSProp)
+    kernel_size: Window size for convolutional layer (default is 5)
+    strides: Shift amount for the kernel window (default is 1)
     '''
-    model = Sequential( optimizer = 'RMSProp' )
+    model = Sequential()
 
     model.add( 
         Conv2D( filters     = 32, 
@@ -151,8 +157,7 @@ def build_cnn():
                 kernel_size = ( 5, 5 ), 
                 strides     = ( 1, 1 ),
                 padding     = 'same',
-                activation  = 'relu', 
-                data_format = 'channels_last' 
+                activation  = 'relu'
         ) 
     )
 
@@ -234,6 +239,9 @@ def build_cnn():
             beta_2 = 0.7
         )
 
+    else:
+        print( 'Input "RMSProp" or "Adam"' )
+
     model.compile(
         optimizer = optimizer, 
         loss      = "categorical_crossentropy", 
@@ -244,9 +252,9 @@ def build_cnn():
 
 Adam()
 
-# Run CNN Model Construction
+# Execute CNN & Get Results
 cnn_grid = {
-
+    'optimizer' : [ 'RMSProp', 'Adam' ]
 }
 
 mnist_classifier = KerasClassifier( build_fn = build_cnn, verbose = 0 )
@@ -258,17 +266,12 @@ cnn_model_grid = RandomizedSearchCV(
     cv                  = 5
 )
 
+cnn_model_fit = cnn_model_grid.fit( train_X, train_y )
 
-
-
-
-
-
-
-history = model.fit_generator(datagen.flow(X_train,Y_train, batch_size=batch_size),
-                              epochs = epochs, validation_data = (X_val,Y_val),
-                              verbose = 2, steps_per_epoch=X_train.shape[0] // batch_size
-                              , callbacks=[learning_rate_reduction])
+# history = model.fit_generator(datagen.flow(X_train,Y_train, batch_size=batch_size),
+#                               epochs = epochs, validation_data = (X_val,Y_val),
+#                               verbose = 2, steps_per_epoch=X_train.shape[0] // batch_size
+#                               , callbacks=[learning_rate_reduction])
 
 
 # Generate Submission
