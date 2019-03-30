@@ -98,18 +98,15 @@ data_path = os.getcwd() + '\\..\\..\\data\\mnist\\'
 full_train = pd.read_csv( data_path + 'train.csv' )
 full_test  = pd.read_csv( data_path + 'test.csv' )
 
+TEST_INDEX = pd.Series( full_test.index + 1 )
+
 # Check for Missing
 return_nan_count( full_train )
 return_nan_count( full_test )
 
-# Normalize Values
-full_train = full_train / 255.0
-full_test  = full_test  / 255.0
-
 # Reshape 2D Matrix into 4D
 train_X = full_train\
             .drop( [ 'label' ], axis = 1 )\
-            .astype( 'float32' )\
             .values.reshape( -1, 28, 28, 1 )
 
 train_y = to_categorical( 
@@ -119,8 +116,15 @@ train_y = to_categorical(
 
 # Test
 test_X = full_test\
-            .astype( 'float32' )\
             .values.reshape( -1, 28, 28, 1 )
+
+# Remove Unnecessary Variables from Above
+del full_train
+del full_test
+
+# Normalize Values
+train_X = train_X / 255.0
+test_X  = test_X  / 255.0
 
 # Preview Digits
 show_images( 0, train_X )
@@ -164,9 +168,15 @@ return_flow_batch( X_train, y_train )
 # ==================================================
 # Build CNN Architecure
 def build_cnn( 
-    optimizer   = 'RMSProp',
-    kernel_size = 5,
-    strides     = 1
+    optimizer          = 'RMSProp',
+    rmsprop_parameters = 'rmsprop_parameters',
+    adam_parameters    = 'adam_parameters',
+    kernel_size_one    = 5,
+    kernel_size_two    = 3,
+    strides            = 1,
+    pool_size          = 2,
+    dropout_one        = 0.25,
+    dropout_two        = 0.50
 ):
     '''
     optimizer: Either "RMSProp" or "Adam" (default is RMSProp)
@@ -177,8 +187,8 @@ def build_cnn(
 
     model.add( 
         Conv2D( filters     = 32, 
-                kernel_size = ( 5, 5 ), 
-                strides     = ( 1, 1 ),
+                kernel_size = ( kernel_size_one, kernel_size_one ), 
+                strides     = ( strides, strides ),
                 padding     = 'same', 
                 activation  = 'relu',
                 input_shape = ( 28, 28, 1 ), 
@@ -188,8 +198,8 @@ def build_cnn(
 
     model.add( 
         Conv2D( filters     = 32, 
-                kernel_size = ( 5, 5 ), 
-                strides     = ( 1, 1 ),
+                kernel_size = ( kernel_size_one, kernel_size_one ), 
+                strides     = ( strides, strides ),
                 padding     = 'same',
                 activation  = 'relu'
         ) 
@@ -197,7 +207,7 @@ def build_cnn(
 
     model.add( 
         MaxPool2D( 
-            pool_size = ( 2, 2 ) 
+            pool_size = ( pool_size, pool_size ) 
         ) 
     )
 
@@ -208,8 +218,8 @@ def build_cnn(
     model.add( 
         Conv2D( 
             filters     = 64, 
-            kernel_size = ( 3, 3 ), 
-            strides     = ( 1, 1 ),
+            kernel_size = ( kernel_size_two, kernel_size_two ), 
+            strides     = ( strides, strides ),
             padding     = 'same',
             activation  = 'relu', 
             data_format = 'channels_last' 
@@ -219,8 +229,8 @@ def build_cnn(
     model.add( 
         Conv2D( 
             filters     = 64, 
-            kernel_size = ( 3, 3 ), 
-            strides     = ( 1, 1 ),
+            kernel_size = ( kernel_size_two, kernel_size_two ), 
+            strides     = ( strides, strides ),
             padding     = 'same',
             activation  = 'relu', 
             data_format = 'channels_last' 
@@ -228,13 +238,13 @@ def build_cnn(
     )
     model.add( 
         MaxPool2D( 
-            pool_size = ( 2, 2 ),
+            pool_size = ( pool_size, pool_size ),
             strides   = ( 2, 2 )
         ) 
     )
 
     model.add(
-        Dropout( 0.25 )
+        Dropout( dropout_one )
     )
 
     model.add( 
@@ -249,7 +259,7 @@ def build_cnn(
     )
 
     model.add(
-        Dropout( 0.50 )
+        Dropout( dropout_two )
     )
 
     model.add( 
@@ -262,21 +272,21 @@ def build_cnn(
     # Dynamic Optimizer
     if optimizer == 'RMSProp':
         optimizer = RMSprop(    
-            lr      = 0.001, 
-            rho     = 0.9, 
-            epsilon = 1e-08, 
-            decay   = 0.0
+            lr      = rmsprop_parameters[ 'lr' ], 
+            rho     = rmsprop_parameters[ 'rho' ], 
+            epsilon = rmsprop_parameters[ 'epsilon' ], 
+            decay   = rmsprop_parameters[ 'decay' ]
         )
     
     elif optimizer == 'Adam':
         optimizer = Adam(    
-            lr     = 0.001,
-            beta_1 = 0.2,
-            beta_2 = 0.7
+            lr     = adam_parameters[ 'lr' ],
+            beta_1 = adam_parameters[ 'beta_1' ],
+            beta_2 = adam_parameters[ 'beta_2' ]
         )
 
     else:
-        print( 'Input "RMSProp" or "Adam"' )
+        print( 'Please use input "RMSProp" or "Adam"' )
 
     model.compile(
         optimizer = optimizer, 
@@ -290,7 +300,18 @@ def build_cnn(
 # Find Optimal Hyperparameters
 # ==================================================
 cnn_grid = {
-    'optimizer' : [ 'RMSProp', 'Adam' ]
+    'optimizer'          : [ 'RMSProp', 'Adam' ],
+    'rmsprop_parameters' : [{
+        'lr'      : [ 0.0001, 0.001, 0.01 ], 
+        'rho'     : [ 0.1, 0.3, 0.5, 0.7, 0.9 ],
+        'epsilon' : [ 1e-10, 1e-08, 1e-06 ], 
+        'decay'   : [ 0.1, 0.3, 0.4, 0.6, 0.8 ]
+    }],
+    'adam_parameters'    : [{
+        'lr'     : [ 0.0001, 0.001, 0.01 ],
+        'beta_1' : [ 0.1, 0.3, 0.5, 0.7, 0.9 ],
+        'beta_2' : [ 0.1, 0.3, 0.5, 0.7, 0.9 ]
+    }]
 }
 
 mnist_classifier = KerasClassifier( build_fn = build_cnn, verbose = 0 )
@@ -299,7 +320,7 @@ cnn_model_grid = RandomizedSearchCV(
     estimator           = mnist_classifier,
     param_distributions = cnn_grid,
     n_jobs              = 6,
-    n_iter              = 2,
+    n_iter              = 10,
     cv                  = 5,
     verbose             = 1
 )
@@ -350,7 +371,7 @@ results = pd.Series( results, name = "Label" )
 # Generate Submission
 # ==================================================
 submission = pd.DataFrame({ 
-    'ImageId' : pd.Series( full_test.index + 1 ),
+    'ImageId' : TEST_INDEX,
     'Label'   : results 
 })
 
