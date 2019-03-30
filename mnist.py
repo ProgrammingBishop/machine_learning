@@ -21,14 +21,15 @@ from keras.utils.np_utils        import to_categorical # One-Hot-Encode Labels
 from keras.models                import Sequential
 from keras.optimizers            import RMSprop, Adam
 from keras.layers                import Conv2D, MaxPool2D, Flatten, Dense, Dropout
+from keras.callbacks             import ReduceLROnPlateau
 
 
 # Global Functions
 # ==================================================
 def show_images( start_obs, df ):
     '''
-    start_obs: Index to start for digit display
-    df: Pandas dataframe start_obs indexes from
+    start_obs : Index to start for digit display
+    df        : Pandas dataframe start_obs indexes from
     '''
     for index, _ in enumerate( range( start_obs, ( start_obs + 9 ) ) ):
         plt.subplot( 330 + 1 + index )
@@ -39,8 +40,8 @@ def show_images( start_obs, df ):
 
 def return_flow_batch( X, y ):
     '''
-    X: Feature values
-    y: Response values
+    X : Feature values
+    y : Response values
     '''
     for X_batch, _ in datagen.flow( X, y, batch_size = 9 ):
         for image in range( 0, 9 ):
@@ -52,7 +53,40 @@ def return_flow_batch( X, y ):
 
 
 def return_nan_count( df ):
+    '''
+    df : DataFrame to check null values for
+    '''
     print( df.isnull().any().describe() )
+
+
+def return_keras_grid_results( grid_fit ):
+    '''
+    grid_fit : Keras object obtained through grid search
+    '''
+    mean       = grid_fit.cv_results_[ 'mean_test_score' ]
+    std_dev    = grid_fit.cv_results_[ 'std_test_score' ]
+    parameters = grid_fit.cv_results_[ 'params' ]
+
+    for mean, std_dev, parameters in zip( parameters, mean, std_dev ):
+        print("\
+            Parameters : %r \n\
+            Mean       : %f \n\
+            STD        : %f \n"\
+            % ( mean, std_dev, parameters ) 
+        )
+
+
+def return_keras_grid_parameters( grid_fit ):
+    '''
+    grid_fit : Keras object obtained through grid search
+    '''
+    mean        = grid_fit.cv_results_[ 'mean_test_score' ]
+    best_mean   = mean.tolist().index( max( mean ) )
+    best_params = grid_fit.cv_results_[ 'params' ][ best_mean ]
+
+    print( best_params )
+
+    return best_params
 
 
 # Load Data
@@ -145,9 +179,9 @@ def build_cnn(
         Conv2D( filters     = 32, 
                 kernel_size = ( 5, 5 ), 
                 strides     = ( 1, 1 ),
-                padding     = 'same',
+                padding     = 'same', 
+                activation  = 'relu',
                 input_shape = ( 28, 28, 1 ), 
-                activation  = 'relu', 
                 data_format = 'channels_last' 
         ) 
     )
@@ -162,7 +196,9 @@ def build_cnn(
     )
 
     model.add( 
-        MaxPool2D( pool_size = ( 2, 2 ) ) 
+        MaxPool2D( 
+            pool_size = ( 2, 2 ) 
+        ) 
     )
 
     model.add(
@@ -218,7 +254,7 @@ def build_cnn(
 
     model.add( 
         Dense( 
-            units      = 1, 
+            units      = 10, 
             activation = 'softmax' 
         ) 
     )
@@ -250,9 +286,9 @@ def build_cnn(
 
     return model
 
-Adam()
 
-# Execute CNN & Get Results
+# Find Optimal Hyperparameters
+# ==================================================
 cnn_grid = {
     'optimizer' : [ 'RMSProp', 'Adam' ]
 }
@@ -263,25 +299,60 @@ cnn_model_grid = RandomizedSearchCV(
     estimator           = mnist_classifier,
     param_distributions = cnn_grid,
     n_jobs              = 6,
-    cv                  = 5
+    n_iter              = 2,
+    cv                  = 5,
+    verbose             = 1
 )
 
-cnn_model_fit = cnn_model_grid.fit( train_X, train_y )
+cnn_model_fit = cnn_model_grid.fit( X_train, y_train )
 
-# history = model.fit_generator(datagen.flow(X_train,Y_train, batch_size=batch_size),
-#                               epochs = epochs, validation_data = (X_val,Y_val),
-#                               verbose = 2, steps_per_epoch=X_train.shape[0] // batch_size
-#                               , callbacks=[learning_rate_reduction])
+# Return Results & Best Hyperparameters
+return_keras_grid_results( cnn_model_fit )
+best_estimator = return_keras_grid_parameters( cnn_model_fit )
+
+# Rerun CNN with Best Hyperparameters
+cnn_model = build_cnn( optimizer = best_estimator[ 'optimizer' ] )
+
+
+# Fit CNN on MNIST & Evaluate Performance
+# ==================================================
+BATCH_SIZE = 86
+EPOCHS     = 1
+LEARN_RATE = ReduceLROnPlateau(
+    monitor  = 'val_acc', 
+    factor   = 0.25, 
+    patience = math.ceil( EPOCHS / 10 ) + 1, 
+    min_lr   = 0.00001,
+    verbose  = 1, 
+)
+
+history = cnn_model.fit_generator(
+    datagen.flow( 
+        X_train, y_train, 
+        batch_size = BATCH_SIZE
+    ),
+    epochs          = EPOCHS, 
+    workers         = 6,
+    validation_data = ( X_valid, y_valid ),
+    verbose         = 1, 
+    steps_per_epoch = math.ceil( X_train.shape[0] / BATCH_SIZE ), 
+    callbacks       = [ LEARN_RATE ]
+)
+
+
+# Get Predictions
+# ==================================================
+results = cnn_model.predict( test_X )
+results = np.argmax( results, axis = 1 )
+results = pd.Series( results, name = "Label" )
 
 
 # Generate Submission
 # ==================================================
-submission = pd.DataFrame(
-    { 
-        'ImageId' : None,
-        'Label'   : None 
-    } 
-)
+submission = pd.DataFrame({ 
+    'ImageId' : pd.Series( full_test.index + 1 ),
+    'Label'   : results 
+})
 
 submission.to_csv( '.\\mnist_submission.csv', index = False )
 print( submission.head(10) )
