@@ -14,7 +14,9 @@ import seaborn           as sns
 
 # Preprocessing
 from sklearn.model_selection import train_test_split, RandomizedSearchCV
+from dask.diagnostics        import ProgressBar
 
+# Model Building
 from keras.wrappers.scikit_learn import KerasClassifier
 from keras.preprocessing.image   import ImageDataGenerator
 from keras.utils.np_utils        import to_categorical # One-Hot-Encode Labels
@@ -89,6 +91,32 @@ def return_keras_grid_parameters( grid_fit ):
     return best_params
 
 
+def plot_keras_history( 
+    train_metric = 'acc',
+    valid_metric = 'val_acc',
+    eval_metric  = 'Accuracy'
+):
+    '''
+    Plot Accuracy:
+        train_metric: acc
+        valid_metric: val_acc
+    Plot Loss:
+        train_metric: loss
+        valid_metric: val_loss
+    '''
+    # Values to Plot
+    plt.plot( history.history[ train_metric ] )
+    plt.plot( history.history[ valid_metric ] )
+    
+    # Plot Labels
+    plt.title( eval_metric )
+    plt.ylabel( eval_metric )
+    plt.xlabel( 'Epoch' )
+    plt.legend( [ 'Train', 'Validation'], loc = 'best' )
+
+    plt.show()
+
+
 # Load Data
 # ==================================================
 # Full DataFrames
@@ -148,9 +176,9 @@ datagen = ImageDataGenerator(
     featurewise_center            = False, 
     featurewise_std_normalization = False,
     samplewise_std_normalization  = False,  
-    zca_whitening                 = True,
-    rotation_range                = 90,
-    zoom_range                    = 0.25,
+    zca_whitening                 = False,
+    rotation_range                = 10,
+    zoom_range                    = 0.1,
     width_shift_range             = 0.1,
     height_shift_range            = 0.1,
     horizontal_flip               = False,
@@ -168,21 +196,18 @@ return_flow_batch( X_train, y_train )
 # ==================================================
 # Build CNN Architecure
 def build_cnn( 
-    optimizer          = 'RMSProp',
-    rmsprop_parameters = 'rmsprop_parameters',
-    adam_parameters    = 'adam_parameters',
-    kernel_size_one    = 5,
-    kernel_size_two    = 3,
-    strides            = 1,
-    pool_size          = 2,
-    dropout_one        = 0.25,
-    dropout_two        = 0.50
+    optimizer       = 'RMSProp',
+    kernel_size_one = 5,
+    kernel_size_two = 3,
+    strides         = 1,
+    pool_size       = 2,
+    dropout_one     = 0.25,
+    dropout_two     = 0.50,
+    lr              = 0.001, 
+    rho             = 0.1,
+    epsilon         = 1e-10,
+    decay           = 0.1
 ):
-    '''
-    optimizer: Either "RMSProp" or "Adam" (default is RMSProp)
-    kernel_size: Window size for convolutional layer (default is 5)
-    strides: Shift amount for the kernel window (default is 1)
-    '''
     model = Sequential()
 
     model.add( 
@@ -201,7 +226,8 @@ def build_cnn(
                 kernel_size = ( kernel_size_one, kernel_size_one ), 
                 strides     = ( strides, strides ),
                 padding     = 'same',
-                activation  = 'relu'
+                activation  = 'relu',
+                data_format = 'channels_last' 
         ) 
     )
 
@@ -212,7 +238,7 @@ def build_cnn(
     )
 
     model.add(
-        Dropout( 0.25 )
+        Dropout( dropout_one )
     )
 
     model.add( 
@@ -269,24 +295,12 @@ def build_cnn(
         ) 
     )
 
-    # Dynamic Optimizer
-    if optimizer == 'RMSProp':
-        optimizer = RMSprop(    
-            lr      = rmsprop_parameters[ 'lr' ], 
-            rho     = rmsprop_parameters[ 'rho' ], 
-            epsilon = rmsprop_parameters[ 'epsilon' ], 
-            decay   = rmsprop_parameters[ 'decay' ]
-        )
-    
-    elif optimizer == 'Adam':
-        optimizer = Adam(    
-            lr     = adam_parameters[ 'lr' ],
-            beta_1 = adam_parameters[ 'beta_1' ],
-            beta_2 = adam_parameters[ 'beta_2' ]
-        )
-
-    else:
-        print( 'Please use input "RMSProp" or "Adam"' )
+    optimizer = RMSprop(    
+        lr      = lr, 
+        rho     = rho, 
+        epsilon = epsilon, 
+        decay   = decay
+    )
 
     model.compile(
         optimizer = optimizer, 
@@ -299,24 +313,22 @@ def build_cnn(
 
 # Find Optimal Hyperparameters
 # ==================================================
+# After an Initial Grid Search RMSProp Performed Best
 cnn_grid = {
-    'optimizer'          : [ 'RMSProp', 'Adam' ],
-    'rmsprop_parameters' : [{
-        'lr'      : [ 0.0001, 0.001, 0.01 ], 
-        'rho'     : [ 0.1, 0.3, 0.5, 0.7, 0.9 ],
-        'epsilon' : [ 1e-10, 1e-08, 1e-06 ], 
-        'decay'   : [ 0.1, 0.3, 0.4, 0.6, 0.8 ]
-    }],
-    'adam_parameters'    : [{
-        'lr'     : [ 0.0001, 0.001, 0.01 ],
-        'beta_1' : [ 0.1, 0.3, 0.5, 0.7, 0.9 ],
-        'beta_2' : [ 0.1, 0.3, 0.5, 0.7, 0.9 ]
-    }]
+    'optimizer'       : [ 'RMSProp' ],
+    'kernel_size_one' : [ 3, 4, 5 ],
+    'kernel_size_two' : [ 3, 4, 5 ],
+    'dropout_one'     : [ 0.25, 0.5, 0.75 ],
+    'dropout_two'     : [ 0.25, 0.5, 0.75 ],
+    'lr'              : [ 0.0001, 0.001, 0.01 ], 
+    'rho'             : [ 0.1, 0.3, 0.5, 0.7, 0.9 ],
+    'epsilon'         : [ 1e-10, 1e-08, 1e-06 ], 
+    'decay'           : [ 0.1, 0.3, 0.4, 0.6, 0.8 ]
 }
 
-mnist_classifier = KerasClassifier( build_fn = build_cnn, verbose = 0 )
+mnist_classifier = KerasClassifier( build_fn = build_cnn, verbose = 1 )
 
-cnn_model_grid = RandomizedSearchCV(
+cnn_model = RandomizedSearchCV(
     estimator           = mnist_classifier,
     param_distributions = cnn_grid,
     n_jobs              = 6,
@@ -325,11 +337,12 @@ cnn_model_grid = RandomizedSearchCV(
     verbose             = 1
 )
 
-cnn_model_fit = cnn_model_grid.fit( X_train, y_train )
+with ProgressBar():
+    cnn_model.fit( X_train, y_train )
 
 # Return Results & Best Hyperparameters
-return_keras_grid_results( cnn_model_fit )
-best_estimator = return_keras_grid_parameters( cnn_model_fit )
+return_keras_grid_results( cnn_model )
+best_estimator = return_keras_grid_parameters( cnn_model )
 
 # Rerun CNN with Best Hyperparameters
 cnn_model = build_cnn( optimizer = best_estimator[ 'optimizer' ] )
@@ -341,7 +354,7 @@ BATCH_SIZE = 86
 EPOCHS     = 1
 LEARN_RATE = ReduceLROnPlateau(
     monitor  = 'val_acc', 
-    factor   = 0.25, 
+    factor   = 0.1, 
     patience = math.ceil( EPOCHS / 10 ) + 1, 
     min_lr   = 0.00001,
     verbose  = 1, 
@@ -359,6 +372,15 @@ history = cnn_model.fit_generator(
     steps_per_epoch = math.ceil( X_train.shape[0] / BATCH_SIZE ), 
     callbacks       = [ LEARN_RATE ]
 )
+
+
+# Visualize Accuracy and Loss Performance
+# ==================================================
+# Accuracy
+plot_keras_history( 'acc', 'val_acc' )
+
+# Loss
+plot_keras_history( 'loss', 'val_loss' )
 
 
 # Get Predictions
