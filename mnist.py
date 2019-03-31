@@ -22,7 +22,7 @@ from keras.preprocessing.image   import ImageDataGenerator
 from keras.utils.np_utils        import to_categorical # One-Hot-Encode Labels
 from keras.models                import Sequential
 from keras.optimizers            import RMSprop, Adam
-from keras.layers                import Conv2D, MaxPool2D, Flatten, Dense, Dropout
+from keras.layers                import Conv2D, MaxPool2D, AveragePooling2D, Flatten, Dense, Dropout
 from keras.callbacks             import ReduceLROnPlateau
 
 
@@ -160,7 +160,7 @@ show_images( 0, train_X )
 
 # Train / Validation Split
 # ==================================================
-VALIDATION_SIZE = 0.2
+VALIDATION_SIZE = 0.1
 
 X_train, X_valid, y_train, y_valid = train_test_split( 
     train_X, 
@@ -194,19 +194,122 @@ return_flow_batch( X_train, y_train )
 
 # Construct Convolutional Neural Network
 # ==================================================
-# Build CNN Architecure
+# LeNet-5 Architecture
+# --------------------------------------------------
+def build_lenet_5(
+    # RMSProp Parameters
+    lr      = 0.001, 
+    rho     = 0.1,
+    epsilon = 1e-10,
+    decay   = 0.1
+    # Adam Parameters
+    # lr     = 0.001, 
+    # beta_1 = 0.9, 
+    # beta_2 = 0.9, 
+    # decay  = 0.0
+):
+    model = Sequential()
+
+    model.add(
+        Conv2D(
+            filters     = 6, 
+            kernel_size = ( 3, 3 ), 
+            strides     = ( 1, 1 ),
+            padding     = 'same',
+            activation  = 'relu', 
+            input_shape = ( 28, 28, 1 ),
+            data_format = 'channels_last' 
+        )
+    )
+
+    model.add(
+        AveragePooling2D()
+    )
+
+    model.add(
+        Conv2D(
+            filters     = 16, 
+            kernel_size = ( 3, 3 ), 
+            strides     = ( 1, 1 ),
+            padding     = 'same',
+            activation  = 'relu', 
+            data_format = 'channels_last' 
+        )
+    )
+
+    model.add(
+        AveragePooling2D()
+    )
+
+    model.add(
+        Flatten()
+    )
+
+    model.add(
+        Dense(
+            units      = 120, 
+            activation = 'relu'
+        )
+    )
+
+    model.add(
+        Dense(
+            units      = 84, 
+            activation = 'relu'
+        )
+    )
+
+    model.add( 
+        Dense(
+            units      = 10, 
+            activation = 'softmax'
+        )
+    )
+
+    optimizer = RMSprop(    
+        lr      = lr, 
+        rho     = rho, 
+        epsilon = epsilon, 
+        decay   = decay
+    )
+
+    # optimizer = Adam(
+    #     lr      = lr, 
+    #     beta_1  = beta_1, 
+    #     beta_2  = beta_2, 
+    #     epsilon = None, 
+    #     decay   = decay, 
+    #     amsgrad = None
+    # )
+
+    model.compile(
+        optimizer = optimizer, 
+        loss      = "categorical_crossentropy", 
+        metrics   = [ "accuracy" ]
+    )
+
+    return model
+
+
+# Custom CNN Architecure
+# --------------------------------------------------
 def build_cnn( 
-    optimizer       = 'RMSProp',
     kernel_size_one = 5,
     kernel_size_two = 3,
     strides         = 1,
     pool_size       = 2,
     dropout_one     = 0.25,
     dropout_two     = 0.50,
+    # RMSProp Parameters
     lr              = 0.001, 
     rho             = 0.1,
     epsilon         = 1e-10,
     decay           = 0.1
+    # Adam Parameters
+    # lr              = 0.001, 
+    # beta_1          = 0.9, 
+    # beta_2          = 0.9, 
+    # decay           = 0.0
 ):
     model = Sequential()
 
@@ -238,7 +341,7 @@ def build_cnn(
     )
 
     model.add(
-        Dropout( dropout_one )
+        Dropout( rate = dropout_one )
     )
 
     model.add( 
@@ -270,7 +373,7 @@ def build_cnn(
     )
 
     model.add(
-        Dropout( dropout_one )
+        Dropout( rate = dropout_one )
     )
 
     model.add( 
@@ -285,7 +388,7 @@ def build_cnn(
     )
 
     model.add(
-        Dropout( dropout_two )
+        Dropout( rate = dropout_two )
     )
 
     model.add( 
@@ -302,6 +405,15 @@ def build_cnn(
         decay   = decay
     )
 
+    # optimizer = Adam(
+    #     lr      = lr, 
+    #     beta_1  = beta_1, 
+    #     beta_2  = beta_2, 
+    #     epsilon = None, 
+    #     decay   = decay, 
+    #     amsgrad = False
+    # )
+
     model.compile(
         optimizer = optimizer, 
         loss      = "categorical_crossentropy", 
@@ -313,17 +425,70 @@ def build_cnn(
 
 # Find Optimal Hyperparameters
 # ==================================================
-# After an Initial Grid Search RMSProp Performed Best
+
+# LeNet-5 Architecture
+# --------------------------------------------------
+lenet_grid = {
+    # RMSProp Parameters
+    'lr'      : [ 0.0005, 0.001, 0.0015 ], 
+    'rho'     : [ 0.3, 0.6, 0.9 ],
+    'epsilon' : [ 1e-09, 1e-06, 1e-03 ], 
+    'decay'   : [ 0.0, 0.3, 0.06, 0.9 ]
+    # Adam Parameters (Best Parameters after Initial Grid Search: Acc: 97%)
+    # 'lr'     : [ 0.002 ],
+    # 'beta_1' : [ 0.95 ], 
+    # 'beta_2' : [ 0.99 ], 
+    # 'decay'  : [ 0.0 ] 
+}
+
+lenet_classifier = KerasClassifier( build_fn = build_lenet_5, verbose = 1 )
+
+lenet_model = RandomizedSearchCV(
+    estimator           = lenet_classifier,
+    param_distributions = lenet_grid,
+    n_jobs              = -1,
+    n_iter              = 9,
+    cv                  = 5,
+    verbose             = 1
+)
+
+with ProgressBar():
+    lenet_model.fit( X_train, y_train )
+
+# Return Results & Best Hyperparameters
+return_keras_grid_results( lenet_model )
+best_estimator = return_keras_grid_parameters( lenet_model )
+
+
+# Custom CNN Architecture
+# --------------------------------------------------
+# FIRST GRID SEARCH SETUP
+    # 'optimizer'       : [ 'RMSProp' ],
+    # 'kernel_size_one' : [ 3, 4, 5 ],
+    # 'kernel_size_two' : [ 3, 4, 5 ],
+    # 'dropout_one'     : [ 0.25, 0.5, 0.75 ],
+    # 'dropout_two'     : [ 0.25, 0.5, 0.75 ],
+    # 'lr'              : [ 0.0001, 0.001, 0.01 ], 
+    # 'rho'             : [ 0.1, 0.3, 0.5, 0.7, 0.9 ],
+    # 'epsilon'         : [ 1e-10, 1e-08, 1e-06 ], 
+    # 'decay'           : [ 0.1, 0.3, 0.4, 0.6, 0.8 ]
+
 cnn_grid = {
     'optimizer'       : [ 'RMSProp' ],
-    'kernel_size_one' : [ 3, 4, 5 ],
-    'kernel_size_two' : [ 3, 4, 5 ],
-    'dropout_one'     : [ 0.25, 0.5, 0.75 ],
-    'dropout_two'     : [ 0.25, 0.5, 0.75 ],
-    'lr'              : [ 0.0001, 0.001, 0.01 ], 
-    'rho'             : [ 0.1, 0.3, 0.5, 0.7, 0.9 ],
-    'epsilon'         : [ 1e-10, 1e-08, 1e-06 ], 
-    'decay'           : [ 0.1, 0.3, 0.4, 0.6, 0.8 ]
+    'kernel_size_one' : [ 5 ],
+    'kernel_size_two' : [ 3 ],
+    'dropout_one'     : [ 0.25 ],
+    'dropout_two'     : [ 0.5 ],
+    # RMSProp Parameters
+    'lr'              : [ 0.0005, 0.001, 0.002 ], 
+    'rho'             : [ 0.5, 0.7, 0.9 ],
+    'epsilon'         : [ 1e-06, 1e-04, 1e-02 ], 
+    'decay'           : [ 0.0, 0.01, 0.1 ]
+    # Adam Parameters
+    # 'lr'              : [ 0.0005, 0.001, 0.002 ],
+    # 'beta_1'          : [ 0.9, 0.95, 0.99 ], 
+    # 'beta_2'          : [ 0.9, 0.95, 0.99 ], 
+    # 'decay'           : [ 0.0, 0.01, 0.02 ] 
 }
 
 mnist_classifier = KerasClassifier( build_fn = build_cnn, verbose = 1 )
@@ -331,8 +496,8 @@ mnist_classifier = KerasClassifier( build_fn = build_cnn, verbose = 1 )
 cnn_model = RandomizedSearchCV(
     estimator           = mnist_classifier,
     param_distributions = cnn_grid,
-    n_jobs              = 6,
-    n_iter              = 10,
+    n_jobs              = -1,
+    n_iter              = 1,
     cv                  = 5,
     verbose             = 1
 )
@@ -345,7 +510,17 @@ return_keras_grid_results( cnn_model )
 best_estimator = return_keras_grid_parameters( cnn_model )
 
 # Rerun CNN with Best Hyperparameters
-cnn_model = build_cnn( optimizer = best_estimator[ 'optimizer' ] )
+cnn_model = build_cnn( 
+    optimizer       = best_estimator[ 'optimizer' ],
+    kernel_size_one = best_estimator[ 'kernel_size_one' ],
+    kernel_size_two = best_estimator[ 'kernel_size_two' ],
+    dropout_one     = best_estimator[ 'dropout_one' ],
+    dropout_two     = best_estimator[ 'dropout_two' ],
+    lr              = best_estimator[ 'lr' ],
+    rho             = best_estimator[ 'rho' ],
+    epsilon         = best_estimator[ 'epsilon' ],
+    decay           = best_estimator[ 'decay' ]
+)
 
 
 # Fit CNN on MNIST & Evaluate Performance
@@ -354,7 +529,7 @@ BATCH_SIZE = 86
 EPOCHS     = 1
 LEARN_RATE = ReduceLROnPlateau(
     monitor  = 'val_acc', 
-    factor   = 0.1, 
+    factor   = 0.5, 
     patience = math.ceil( EPOCHS / 10 ) + 1, 
     min_lr   = 0.00001,
     verbose  = 1, 
@@ -372,6 +547,9 @@ history = cnn_model.fit_generator(
     steps_per_epoch = math.ceil( X_train.shape[0] / BATCH_SIZE ), 
     callbacks       = [ LEARN_RATE ]
 )
+
+# cnn_model.fit( X_train, y_train, epochs = 30, batch_size = 64 )
+# predictions = cnn_model.predict_classes( test_X )
 
 
 # Visualize Accuracy and Loss Performance
