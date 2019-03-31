@@ -425,16 +425,21 @@ def build_cnn(
 
 # Find Optimal Hyperparameters
 # ==================================================
+# Track Best Accuracy
+acc_score = {
+    'LeNet_5'   : 0,
+    'CustomCNN' : 0
+}
 
 # LeNet-5 Architecture
 # --------------------------------------------------
 lenet_grid = {
-    # RMSProp Parameters
-    'lr'      : [ 0.0005, 0.001, 0.0015 ], 
-    'rho'     : [ 0.3, 0.6, 0.9 ],
-    'epsilon' : [ 1e-09, 1e-06, 1e-03 ], 
-    'decay'   : [ 0.0, 0.3, 0.06, 0.9 ]
-    # Adam Parameters (Best Parameters after Initial Grid Search: Acc: 97%)
+    # RMSProp Parameters (Best Parameters after Initial Grid Search - Acc: 98%)
+    'lr'      : [ 0.001 ], 
+    'rho'     : [ 0.9 ],
+    'epsilon' : [ 1e-06 ], 
+    'decay'   : [ 0.0 ]
+    # Adam Parameters (Best Parameters after Initial Grid Search - Acc: 97%)
     # 'lr'     : [ 0.002 ],
     # 'beta_1' : [ 0.95 ], 
     # 'beta_2' : [ 0.99 ], 
@@ -442,8 +447,7 @@ lenet_grid = {
 }
 
 lenet_classifier = KerasClassifier( build_fn = build_lenet_5, verbose = 1 )
-
-lenet_model = RandomizedSearchCV(
+lenet_model      = RandomizedSearchCV(
     estimator           = lenet_classifier,
     param_distributions = lenet_grid,
     n_jobs              = -1,
@@ -455,40 +459,34 @@ lenet_model = RandomizedSearchCV(
 with ProgressBar():
     lenet_model.fit( X_train, y_train )
 
+# Record Best Accuracy
+acc_score[ 'LeNet_5' ] = round( lenet_model.best_score_, 4 )
+
 # Return Results & Best Hyperparameters
 return_keras_grid_results( lenet_model )
 best_estimator = return_keras_grid_parameters( lenet_model )
 
+# Rerun LeNet with Best Hyperparameters
+lenet_model = build_lenet_5( 
+    lr      = best_estimator[ 'lr' ],
+    rho     = best_estimator[ 'rho' ],
+    epsilon = best_estimator[ 'epsilon' ],
+    decay   = best_estimator[ 'decay' ]
+)
+
 
 # Custom CNN Architecture
 # --------------------------------------------------
-# FIRST GRID SEARCH SETUP
-    # 'optimizer'       : [ 'RMSProp' ],
-    # 'kernel_size_one' : [ 3, 4, 5 ],
-    # 'kernel_size_two' : [ 3, 4, 5 ],
-    # 'dropout_one'     : [ 0.25, 0.5, 0.75 ],
-    # 'dropout_two'     : [ 0.25, 0.5, 0.75 ],
-    # 'lr'              : [ 0.0001, 0.001, 0.01 ], 
-    # 'rho'             : [ 0.1, 0.3, 0.5, 0.7, 0.9 ],
-    # 'epsilon'         : [ 1e-10, 1e-08, 1e-06 ], 
-    # 'decay'           : [ 0.1, 0.3, 0.4, 0.6, 0.8 ]
-
 cnn_grid = {
-    'optimizer'       : [ 'RMSProp' ],
     'kernel_size_one' : [ 5 ],
     'kernel_size_two' : [ 3 ],
     'dropout_one'     : [ 0.25 ],
     'dropout_two'     : [ 0.5 ],
-    # RMSProp Parameters
-    'lr'              : [ 0.0005, 0.001, 0.002 ], 
-    'rho'             : [ 0.5, 0.7, 0.9 ],
-    'epsilon'         : [ 1e-06, 1e-04, 1e-02 ], 
-    'decay'           : [ 0.0, 0.01, 0.1 ]
-    # Adam Parameters
-    # 'lr'              : [ 0.0005, 0.001, 0.002 ],
-    # 'beta_1'          : [ 0.9, 0.95, 0.99 ], 
-    # 'beta_2'          : [ 0.9, 0.95, 0.99 ], 
-    # 'decay'           : [ 0.0, 0.01, 0.02 ] 
+    # RMSProp Parameters (Best Parameters after Initial Grid Search - Acc: 90% )
+    'lr'              : [ 0.001 ], 
+    'rho'             : [ 0.9 ],
+    'epsilon'         : [ 1e-06 ], 
+    'decay'           : [ 0.0 ]
 }
 
 mnist_classifier = KerasClassifier( build_fn = build_cnn, verbose = 1 )
@@ -505,13 +503,15 @@ cnn_model = RandomizedSearchCV(
 with ProgressBar():
     cnn_model.fit( X_train, y_train )
 
+# Record Best Accuracy
+acc_score[ 'CustomCNN' ] = round( cnn_model.best_score_, 4 )
+
 # Return Results & Best Hyperparameters
 return_keras_grid_results( cnn_model )
 best_estimator = return_keras_grid_parameters( cnn_model )
 
 # Rerun CNN with Best Hyperparameters
 cnn_model = build_cnn( 
-    optimizer       = best_estimator[ 'optimizer' ],
     kernel_size_one = best_estimator[ 'kernel_size_one' ],
     kernel_size_two = best_estimator[ 'kernel_size_two' ],
     dropout_one     = best_estimator[ 'dropout_one' ],
@@ -521,6 +521,11 @@ cnn_model = build_cnn(
     epsilon         = best_estimator[ 'epsilon' ],
     decay           = best_estimator[ 'decay' ]
 )
+
+
+# Review Accuracy Scores
+# ==================================================
+print( pd.DataFrame( { 'Accuracy' : acc_score }, index = acc_score.keys() ).sort_values( by = [ 'Accuracy' ], ascending = True ) )
 
 
 # Fit CNN on MNIST & Evaluate Performance
