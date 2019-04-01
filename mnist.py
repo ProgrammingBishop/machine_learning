@@ -388,7 +388,7 @@ def build_cnn(
         Flatten() 
     )
 
-    # Update Fully Connected Layers units to Account for Additional Filters
+    # Update/Condense Fully Connected Layers units to Account for Additional Filters
     model.add(
         Dense(
             units      = 256, 
@@ -397,10 +397,7 @@ def build_cnn(
     )
 
     model.add(
-        Dense(
-            units      = 128, 
-            activation = 'relu'
-        )
+        Dropout( rate = dropout_two )
     )
 
     model.add( 
@@ -585,6 +582,6 @@ submission = pd.DataFrame({
     'Label'   : results 
 })
 
-# Below Submission Scored in Top 26%
+# Below Submission Scored in Top 21%
 submission.to_csv( '.\\mnist_submission.csv', index = False )
 print( submission.head(10) )
