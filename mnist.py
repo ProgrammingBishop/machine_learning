@@ -1,3 +1,9 @@
+# References for Construction
+    # https://machinelearningmastery.com/image-augmentation-deep-learning-keras/
+    # https://machinelearningmastery.com/display-deep-learning-model-training-history-in-keras/
+    # https://engmrk.com/lenet-5-a-classic-cnn-architecture/
+    # https://yashk2810.github.io/Applying-Convolutional-Neural-Network-on-the-MNIST-dataset/
+
 # Imports
 # ==================================================
 import os
@@ -19,7 +25,7 @@ from dask.diagnostics        import ProgressBar
 # Model Building
 from keras.wrappers.scikit_learn import KerasClassifier
 from keras.preprocessing.image   import ImageDataGenerator
-from keras.utils.np_utils        import to_categorical # One-Hot-Encode Labels
+from keras.utils.np_utils        import to_categorical
 from keras.models                import Sequential
 from keras.optimizers            import RMSprop, Adam
 from keras.layers                import Conv2D, MaxPool2D, AveragePooling2D, Flatten, Dense, Dropout
@@ -92,11 +98,13 @@ def return_keras_grid_parameters( grid_fit ):
 
 
 def plot_keras_history( 
-    train_metric = 'acc',
-    valid_metric = 'val_acc',
-    eval_metric  = 'Accuracy'
+    model_history,
+    train_metric  = 'acc',
+    valid_metric  = 'val_acc',
+    eval_metric   = 'Accuracy'
 ):
     '''
+    model_history: fit_generator object
     Plot Accuracy:
         train_metric: acc
         valid_metric: val_acc
@@ -105,8 +113,8 @@ def plot_keras_history(
         valid_metric: val_loss
     '''
     # Values to Plot
-    plt.plot( history.history[ train_metric ] )
-    plt.plot( history.history[ valid_metric ] )
+    plt.plot( model_history.history[ train_metric ] )
+    plt.plot( model_history.history[ valid_metric ] )
     
     # Plot Labels
     plt.title( eval_metric )
@@ -291,28 +299,24 @@ def build_lenet_5(
     return model
 
 
-# Custom CNN Architecure
+# Custom CNN Architecure (Customized LeNet-5)
 # --------------------------------------------------
 def build_cnn( 
-    kernel_size_one = 5,
+    kernel_size_one = 3,
     kernel_size_two = 3,
     strides         = 1,
     pool_size       = 2,
     dropout_one     = 0.25,
     dropout_two     = 0.50,
-    # RMSProp Parameters
     lr              = 0.001, 
     rho             = 0.1,
     epsilon         = 1e-10,
     decay           = 0.1
-    # Adam Parameters
-    # lr              = 0.001, 
-    # beta_1          = 0.9, 
-    # beta_2          = 0.9, 
-    # decay           = 0.0
 ):
     model = Sequential()
 
+    # Additional Convolution Layer
+    # Increased Number of Filters (32 to Account for Second Convolution Layer)
     model.add( 
         Conv2D( filters     = 32, 
                 kernel_size = ( kernel_size_one, kernel_size_one ), 
@@ -334,16 +338,19 @@ def build_cnn(
         ) 
     )
 
+    # Update to Max Pooling to Extract Edges Better
     model.add( 
         MaxPool2D( 
             pool_size = ( pool_size, pool_size ) 
         ) 
     )
 
+    # Added Dropout
     model.add(
         Dropout( rate = dropout_one )
     )
 
+    # Add Additional Convolution Step
     model.add( 
         Conv2D( 
             filters     = 64, 
@@ -365,6 +372,7 @@ def build_cnn(
             data_format = 'channels_last' 
         ) 
     )
+
     model.add( 
         MaxPool2D( 
             pool_size = ( pool_size, pool_size ),
@@ -380,15 +388,19 @@ def build_cnn(
         Flatten() 
     )
 
-    model.add( 
-        Dense( 
+    # Update Fully Connected Layers units to Account for Additional Filters
+    model.add(
+        Dense(
             units      = 256, 
-            activation = 'relu' 
-        ) 
+            activation = 'relu'
+        )
     )
 
     model.add(
-        Dropout( rate = dropout_two )
+        Dense(
+            units      = 128, 
+            activation = 'relu'
+        )
     )
 
     model.add( 
@@ -404,15 +416,6 @@ def build_cnn(
         epsilon = epsilon, 
         decay   = decay
     )
-
-    # optimizer = Adam(
-    #     lr      = lr, 
-    #     beta_1  = beta_1, 
-    #     beta_2  = beta_2, 
-    #     epsilon = None, 
-    #     decay   = decay, 
-    #     amsgrad = False
-    # )
 
     model.compile(
         optimizer = optimizer, 
@@ -433,13 +436,16 @@ acc_score = {
 
 # LeNet-5 Architecture
 # --------------------------------------------------
+# Faster architecture to decide between RMSProp and Adam
+# RMSProp has best accuracy; faster architecture to find optimal hyperparameters
+# These decisions will be used as a benchmark for the slower custom CNN architecture
 lenet_grid = {
-    # RMSProp Parameters (Best Parameters after Initial Grid Search - Acc: 98%)
+    # RMSProp Parameters ( Best Parameters after Initial Grid Search - Acc: 95% )
     'lr'      : [ 0.001 ], 
     'rho'     : [ 0.9 ],
     'epsilon' : [ 1e-06 ], 
     'decay'   : [ 0.0 ]
-    # Adam Parameters (Best Parameters after Initial Grid Search - Acc: 97%)
+    # Adam Parameters ( Best Parameters after Initial Grid Search - Acc: 93% )
     # 'lr'     : [ 0.002 ],
     # 'beta_1' : [ 0.95 ], 
     # 'beta_2' : [ 0.99 ], 
@@ -482,7 +488,7 @@ cnn_grid = {
     'kernel_size_two' : [ 3 ],
     'dropout_one'     : [ 0.25 ],
     'dropout_two'     : [ 0.5 ],
-    # RMSProp Parameters (Best Parameters after Initial Grid Search - Acc: 90% )
+    # RMSProp Parameters ( Parameters inspired from LeNet-5 Grid Search - Acc: 98% )
     'lr'              : [ 0.001 ], 
     'rho'             : [ 0.9 ],
     'epsilon'         : [ 1e-06 ], 
@@ -525,13 +531,14 @@ cnn_model = build_cnn(
 
 # Review Accuracy Scores
 # ==================================================
+# CustomCNN Performs best with 98.09%
 print( pd.DataFrame( { 'Accuracy' : acc_score }, index = acc_score.keys() ).sort_values( by = [ 'Accuracy' ], ascending = True ) )
 
 
 # Fit CNN on MNIST & Evaluate Performance
 # ==================================================
-BATCH_SIZE = 86
-EPOCHS     = 1
+BATCH_SIZE = 64
+EPOCHS     = 30
 LEARN_RATE = ReduceLROnPlateau(
     monitor  = 'val_acc', 
     factor   = 0.5, 
@@ -540,7 +547,10 @@ LEARN_RATE = ReduceLROnPlateau(
     verbose  = 1, 
 )
 
-history = cnn_model.fit_generator(
+# CustomCNN Architecture
+# --------------------------------------------------
+# Below Scored 99.71% Accuracy 
+cnn_history = cnn_model.fit_generator(
     datagen.flow( 
         X_train, y_train, 
         batch_size = BATCH_SIZE
@@ -553,17 +563,12 @@ history = cnn_model.fit_generator(
     callbacks       = [ LEARN_RATE ]
 )
 
-# cnn_model.fit( X_train, y_train, epochs = 30, batch_size = 64 )
-# predictions = cnn_model.predict_classes( test_X )
-
 
 # Visualize Accuracy and Loss Performance
 # ==================================================
-# Accuracy
-plot_keras_history( 'acc', 'val_acc' )
-
-# Loss
-plot_keras_history( 'loss', 'val_loss' )
+# CustomCNN
+plot_keras_history( cnn_history, 'acc', 'val_acc' )
+plot_keras_history( cnn_history, 'loss', 'val_loss' )
 
 
 # Get Predictions
@@ -580,5 +585,6 @@ submission = pd.DataFrame({
     'Label'   : results 
 })
 
+# Below Submission Scored in Top 26%
 submission.to_csv( '.\\mnist_submission.csv', index = False )
 print( submission.head(10) )
