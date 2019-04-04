@@ -28,9 +28,9 @@ TARGET_TRACK_LIST        = [
     'Hearthstone', 'Diablo', 
     'Blizzard',    'StarCraft' 
 ]
-TARGET_STATUS_COUNT      = 0
-TARGET_MAX_STATUSES      = 1000
-MAX_FOLLOWERS            = 2
+START_STATUS_COUNT   = 0
+END_STATUS_COUNT     = 1000
+MAX_FOLLOWERS_REPORT = 2
 
 # Securly Obtain Credentials
 credentials = os.fspath( os.getcwd() )
@@ -67,17 +67,18 @@ class Listener( StreamListener ):
         data     : Twitter information retreived by Stream() object
         filename : Location to write data to
         '''
-        global TARGET_STATUS_COUNT
-        global TARGET_MAX_STATUSES
+        global START_STATUS_COUNT
+        global END_STATUS_COUNT
+        global TARGET_STREAM_DATA
 
         write_to_file( TARGET_STREAM_DATA, data )
 
-        if TARGET_STATUS_COUNT >= TARGET_MAX_STATUSES:
+        if START_STATUS_COUNT >= END_STATUS_COUNT:
             sys.exit()
         else:
-            TARGET_STATUS_COUNT += 1
+            START_STATUS_COUNT += 1
             print( "Progress: {}%"\
-                .format( str( round( TARGET_STATUS_COUNT / TARGET_MAX_STATUSES * 100, 2 ) ) ) )
+                .format( str( round( START_STATUS_COUNT / END_STATUS_COUNT * 100, 2 ) ) ) )
         
     def on_error( self, status ):
         print( status )
@@ -91,11 +92,12 @@ class GetFromTwitter():
         user_name : Twitter profile getting followers from
         api       : teepy API() object
         '''
-        global MAX_FOLLOWERS
+        global MAX_FOLLOWERS_REPORT
+        global FOLLOWER_FRIEND_DATA
 
         follower_friends = defaultdict( list )
 
-        for follower in Cursor( api.followers, screen_name = user_name, ).items( MAX_FOLLOWERS ):
+        for follower in Cursor( api.followers, screen_name = user_name, ).items( MAX_FOLLOWERS_REPORT ):
             follower_friends[ '"' + follower.screen_name +  '"' ]\
                 .append( api.friends_ids( screen_name = follower.screen_name ) )
 
@@ -120,7 +122,7 @@ if __name__ == '__main__':
     # Retrieve/Write Statuses
     target_statuses = api.user_timeline( 
         screen_name = TARGET_SCREEN_NAME, 
-        count       = TARGET_MAX_STATUSES, 
+        count       = END_STATUS_COUNT, 
         include_rts = True 
     )
 
