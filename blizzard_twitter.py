@@ -12,6 +12,8 @@ from collections import defaultdict
 import sys
 import time
 import os
+import re
+import json
 
 # Streaming Libraries
 from tweepy.streaming import StreamListener
@@ -28,9 +30,9 @@ TARGET_TRACK_LIST        = [
     'Hearthstone', 'Diablo', 
     'Blizzard',    'StarCraft' 
 ]
-START_STATUS_COUNT   = 0
-END_STATUS_COUNT     = 1000
-MAX_FOLLOWERS_REPORT = 2
+START_STATUS_COUNT    = 1
+END_STATUS_COUNT      = 15
+MAX_FOLLOWERS_TRACKED = 2
 
 # Securly Obtain Credentials
 credentials = os.fspath( os.getcwd() )
@@ -45,24 +47,36 @@ CONSUMER_KEY        = credentials[ 'consumer_key'        ][0]
 CONSUMER_SECRET     = credentials[ 'consumer_secret'     ][0]
 
 # Save File Locations
-TARGET_STREAM_DATA   = '.\\blizzard_stream_data.txt'
-TARGET_STATUSES_DATA = '.\\blizzard_statuses_data.txt'
-FOLLOWER_FRIEND_DATA = '.\\blizzard_follower_friends.txt'
-
-
-# Functions
-# ==================================================
-def write_to_file( filepath, content_to_write ):
-    with open( filepath, 'a', encoding = 'utf-8' ) as f:
-            f.write( content_to_write ).close()
+TARGET_STREAM_DATA   = '.\\..\\..\\output\\blizzard_stream_data.txt'
+STREAM_DATA_FRAME    = '.\\..\\..\\output\\blizzard_stream_data_frame.csv'
+TARGET_STATUSES_DATA = '.\\..\\..\\output\\blizzard_statuses_data.txt'
+FOLLOWER_FRIEND_DATA = '.\\..\\..\\output\\blizzard_follower_friends.txt'
 
 
 # Classes
 # ==================================================
+class SaveToFile():
+    def write_to_text_file( self, filepath, content_to_write ):
+        '''
+        filepath         : location to save file
+        content_to_write : content to save at filepath specified 
+        '''
+        with open( filepath, 'a', encoding = 'utf8' ) as f:
+                f.write( content_to_write )
+                f.close()
+
+    def write_to_csv_file( self, filepath, content_to_write ):
+        '''
+        filepath         : location to save file
+        content_to_write : content to save at filepath specified 
+        '''
+        content_to_write.to_csv( filepath, index = False )
+
+
 class Listener( StreamListener ):
     def on_data( self, data ):
         '''
-        Saves Twitter stream data into text file
+        [Extended tweepy Class]: Save Twitter stream data into text file
         --------------------------------------------------
         data     : Twitter information retreived by Stream() object
         filename : Location to write data to
@@ -70,11 +84,14 @@ class Listener( StreamListener ):
         global START_STATUS_COUNT
         global END_STATUS_COUNT
         global TARGET_STREAM_DATA
+        global SAVE_TO_FILE
 
-        write_to_file( TARGET_STREAM_DATA, data )
+        save = SaveToFile()
+
+        save.write_to_text_file( TARGET_STREAM_DATA, data )
 
         if START_STATUS_COUNT >= END_STATUS_COUNT:
-            sys.exit()
+            return False
         else:
             START_STATUS_COUNT += 1
             print( "Progress: {}%"\
@@ -87,27 +104,92 @@ class Listener( StreamListener ):
 class GetFromTwitter():
     def get_follower_friends( self, user_name, api ):
         '''
-        Saves dictionary of user's follower's friends.
+        Save dictionary of user's follower's friends in text file
         --------------------------------------------------
         user_name : Twitter profile getting followers from
         api       : teepy API() object
         '''
-        global MAX_FOLLOWERS_REPORT
+        global MAX_FOLLOWERS_TRACKED
         global FOLLOWER_FRIEND_DATA
+        global SAVE_TO_FILE
 
+        save             = SaveToFile()
         follower_friends = defaultdict( list )
 
-        for follower in Cursor( api.followers, screen_name = user_name, ).items( MAX_FOLLOWERS_REPORT ):
+        for follower in Cursor( api.followers, screen_name = user_name, lang='en' ).items( MAX_FOLLOWERS_TRACKED ):
             follower_friends[ '"' + follower.screen_name +  '"' ]\
                 .append( api.friends_ids( screen_name = follower.screen_name ) )
 
-        write_to_file( FOLLOWER_FRIEND_DATA, follower_friends )
+        save.write_to_text_file( FOLLOWER_FRIEND_DATA, follower_friends )
+
+
+    def get_tweets( self ):
+        '''
+        Convert JSON Tweet data into Python list object
+        '''
+        global TARGET_STREAM_DATA
+        global SAVE_TO_FILE
+
+        tweets = []
+
+        # Read from File
+        try:
+            tweets_file = open( TARGET_STREAM_DATA, "r" )
+        except: 
+            print( 'File open Error' )
+            sys.exit()
+
+        # Convert User Object into JSON Object
+        for line in tweets_file:
+            try:
+                tweet = json.loads( line )
+                tweets.append( tweet )
+            except:
+                continue
+
+        return tweets
+
+
+    def tweet_data_to_csv( self, tweets ):
+        '''
+        Convert Python list object into CSV Dataframe
+        text | screen_name | description | created_at
+        --------------------------------------------------
+        tweets : JSON object created from tweepy User object
+        '''
+        save        = SaveToFile()
+        tweets_data = {
+            'text'          : [],
+            'screen_name'   : [],
+            'description'   : [],
+            'created_at'    : []
+        }
+
+        for tweet in tweets:
+            # Ignore Retweets
+            if ( not tweet[ 'retweeted' ] ) and ( 'RT @' not in tweet[ 'text' ] ):
+                # Handle Longer Tweets
+                if 'extended_tweet' in tweet:
+                    extended_tweet = str( tweet[ 'extended_tweet' ] ).split( ": " )[1].split( "\', \'" )[0]
+                    print( extended_tweet )
+                    print( '\n' )
+                    tweets_data[ 'text' ].append( extended_tweet )
+                else:
+                    tweets_data[ 'text' ].append( tweet[ 'text' ] )
+
+                tweets_data[ 'screen_name' ].append( tweet[ 'user' ][ 'screen_name' ] )
+                tweets_data[ 'description' ].append( tweet[ 'user' ][ 'description' ] )
+                tweets_data[ 'created_at'  ].append( tweet[ 'user' ][ 'created_at'  ] )
+
+        save.write_to_csv_file( STREAM_DATA_FRAME, pd.DataFrame( tweets_data ) )
 
 
 # Obtaining Data
 # ==================================================
 # Run Stream
-if __name__ == '__main__':   
+if __name__ == '__main__':  
+    save = SaveToFile()
+
     # Open Connection
     get_from_twitter = GetFromTwitter()
     listener         = Listener()
@@ -117,23 +199,27 @@ if __name__ == '__main__':
 
     # Build Stream
     api    = API( authorize, wait_on_rate_limit = True )
-    stream = Stream( auth = authorize, listener = listener )
+    stream = Stream( auth = authorize, listener = listener, tweet_mode = "extended" )
 
-    # Retrieve/Write Statuses
-    target_statuses = api.user_timeline( 
-        screen_name = TARGET_SCREEN_NAME, 
-        count       = END_STATUS_COUNT, 
-        include_rts = True 
-    )
+    # Retrieve/Write User's Statuses
+    # target_statuses = api.user_timeline( 
+    #     screen_name = TARGET_SCREEN_NAME, 
+    #     count       = END_STATUS_COUNT, 
+    #     include_rts = True 
+    # )
 
-    write_to_file( TARGET_STATUSES_DATA, target_statuses )
+    # save.write_to_text_file( TARGET_STATUSES_DATA, target_statuses )
 
     # Retrieve/Write Follower Friends
-    get_from_twitter.get_follower_friends( TARGET_SCREEN_NAME, api )
+    # get_from_twitter.get_follower_friends( TARGET_SCREEN_NAME, api )
 
     # Retrieve/Write Streamed Statuses
     stream.filter( 
-        follow   = TARGET_TWITTER_ID,
-        track    = TARGET_TRACK_LIST, 
-        encoding = 'utf8'
+        follow    = TARGET_TWITTER_ID,
+        track     = TARGET_TRACK_LIST, 
+        encoding  = 'utf8',
+        languages = [ 'en' ]
     )
+
+    tweets = get_from_twitter.get_tweets()
+    get_from_twitter.tweet_data_to_csv( tweets )
