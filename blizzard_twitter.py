@@ -32,7 +32,7 @@ TARGET_TRACK_LIST  = [
     'Blizzard',    'StarCraft',
     'Esports' 
 ]
-START_STATUS_COUNT     = 1
+START_STATUS_COUNT     = 0
 END_STATUS_COUNT       = 5000
 MAX_FOLLOWERS_RETURNED = 500
 
@@ -49,10 +49,11 @@ CONSUMER_KEY        = credentials[ 'consumer_key'        ][0]
 CONSUMER_SECRET     = credentials[ 'consumer_secret'     ][0]
 
 # Save File Locations
-STREAM_DATA_TXT      = '.\\..\\..\\output\\blizzard_stream_data.txt'
-TARGET_STATUSES_TXT  = '.\\..\\..\\output\\blizzard_statuses_data.txt'
-STREAM_DATAFRAME_CSV = '.\\..\\..\\output\\blizzard_STREAM_DATAFRAME_CSV.csv'
-FOLLOWER_FRIENDS_CSV = '.\\..\\..\\output\\blizzard_follower_friends.csv'
+STREAM_DATA_TXT        = '.\\..\\..\\output\\blizzard_stream_data.txt'
+TARGET_STATUSES_TXT    = '.\\..\\..\\output\\blizzard_statuses_data.txt'
+STREAM_DATAFRAME_CSV   = '.\\..\\..\\output\\blizzard_stream_dataframe.csv'
+STATUSES_DATAFRAME_CSV = '.\\..\\..\\output\\blizzard_statuses_dataframe.csv'
+FOLLOWER_FRIENDS_CSV   = '.\\..\\..\\output\\blizzard_follower_friends.csv'
 
 
 # Classes
@@ -123,17 +124,17 @@ class GetFromTwitter():
         save.write_to_csv_file( FOLLOWER_FRIENDS_CSV, pd.DataFrame( follower_friends, index = [ 'friends_ids' ] ) )
 
 
-    def get_tweets( self ):
+    def get_tweets( self, tweet_file ):
         '''
         Return : JSON tweet data as Python list
+        --------------------------------------------------
+        tweet_file : text file to extract tweets from
         '''
-        global STREAM_DATA_TXT
-
         tweets = []
 
         # Read from File
         try:
-            tweets_file = open( STREAM_DATA_TXT, "r" )
+            tweets_file = open( tweet_file, "r" )
         except: 
             print( 'File open Error' )
             sys.exit()
@@ -149,12 +150,13 @@ class GetFromTwitter():
         return tweets
 
 
-    def tweet_data_to_csv( self, tweets ):
+    def stream_data_to_csv( self, tweets, filepath ):
         '''
         Return : CSV of Python list created by get_tweets()
         text | screen_name | description | created_at
         --------------------------------------------------
-        tweets : Python list
+        tweets   : Python list
+        filepath : path to file to save data to
         '''
         save        = SaveToFile()
         tweets_data = {
@@ -177,7 +179,38 @@ class GetFromTwitter():
                 tweets_data[ 'description' ].append( tweet[ 'user' ][ 'description' ] )
                 tweets_data[ 'created_at'  ].append( tweet[ 'user' ][ 'created_at'  ] )
 
-        save.write_to_csv_file( STREAM_DATAFRAME_CSV, pd.DataFrame( tweets_data ) )
+        save.write_to_csv_file( filepath, pd.DataFrame( tweets_data ) )
+
+
+    def status_data_to_csv( self, api, filepath ):
+        '''
+        Return : CSV of api.user_timeline object
+        created_at | full_text
+        --------------------------------------------------
+        api      : tweepy api object
+        filepath : path to file to save data to
+        '''
+        global TARGET_SCREEN_NAME, END_STATUS_COUNT
+
+        save        = SaveToFile()
+        update_data = {
+            'created_at' : [],
+            'full_text'  : []
+        }
+
+        for update in Cursor( 
+            api.user_timeline, 
+            screen_name = TARGET_SCREEN_NAME, 
+            lang        = 'en', 
+            tweet_mode  = 'extended'
+        ).items( END_STATUS_COUNT ):
+            update_data[ 'created_at' ].append( update._json[ 'created_at' ] )
+            update_data[ 'full_text'  ].append( update._json[ 'full_text' ] )
+
+            print( "Progress: {}%"\
+                .format( str( round( len( update_data[ 'full_text' ] ) / END_STATUS_COUNT * 100, 2 ) ) ) )
+
+        save.write_to_csv_file( filepath, pd.DataFrame( update_data ) )
 
 
 # Obtaining Data
@@ -196,23 +229,25 @@ if __name__ == '__main__':
     # Stream 1 : Get Incoming Tweets on Tracked Topic
     # --------------------------------------------------
     # [Custom Function]: Restart Stream if Read Timed Out
-    def start_stream():
-        while True:
-            try:
-                stream = Stream( auth = authorize, listener = listener, tweet_mode = "extended" )
-                stream.filter( 
-                    follow    = TARGET_TWITTER_ID,
-                    track     = TARGET_TRACK_LIST, 
-                    encoding  = 'utf8',
-                    languages = [ 'en' ]
-                )
-            except: 
-                continue
+    # def start_stream():
+    #     while ( START_STATUS_COUNT < END_STATUS_COUNT ):
+    #         try:
+    #             stream = Stream( auth = authorize, listener = listener, tweet_mode = "extended" )
+    #             stream.filter( 
+    #                 follow    = TARGET_TWITTER_ID,
+    #                 track     = TARGET_TRACK_LIST, 
+    #                 encoding  = 'utf8',
+    #                 languages = [ 'en' ]
+    #             )
+    #         except: 
+    #             continue
+            
+    #     stream.disconnect()
 
-    start_stream()
+    # start_stream()
 
-    tweets = get_from_twitter.get_tweets()
-    get_from_twitter.tweet_data_to_csv( tweets )
+    # tweets = get_from_twitter.get_tweets( STREAM_DATA_TXT )
+    # get_from_twitter.stream_data_to_csv( tweets, STREAM_DATAFRAME_CSV )
 
 
     # Stream 2 : Get Tweets from Tracked Profile
@@ -222,19 +257,13 @@ if __name__ == '__main__':
         wait_on_rate_limit        = True,
         wait_on_rate_limit_notify = True
     )
-    
-    target_statuses = api.user_timeline( 
-        screen_name = TARGET_SCREEN_NAME, 
-        count       = END_STATUS_COUNT, 
-        include_rts = False 
-    )
 
-    save.write_to_text_file( TARGET_STATUSES_TXT, str( target_statuses ), 'a' )
+    get_from_twitter.status_data_to_csv( api, STATUSES_DATAFRAME_CSV )
 
 
     # Stream 3 : Get Tracked Profile's Follower's Friends
     # --------------------------------------------------
-    get_from_twitter.get_follower_friends( TARGET_SCREEN_NAME, api )
+    # get_from_twitter.get_follower_friends( TARGET_SCREEN_NAME, api )
 
 
 # data = pd.read_csv( '.\\..\\..\\output\\blizzard_follower_friends.csv' ).transpose()
