@@ -1,5 +1,5 @@
 from tweepy     import Cursor, API  
-from pandas     import DataFrame 
+from pandas     import DataFrame, read_csv 
 from SaveToFile import SaveToFile
 
 import configurations as c
@@ -107,7 +107,7 @@ class GetFromTwitter():
         created_at | full_text
         --------------------------------------------------
         authorize : tweepy OAuthHandler object
-        filepath  :location to save output
+        filepath  : location to save output
         '''
         api = API( 
             authorize, 
@@ -131,3 +131,36 @@ class GetFromTwitter():
             update_data[ 'full_text'  ].append( update._json[ 'full_text' ] )
 
         self.save.write_to_csv_file( filepath, DataFrame( update_data ) )
+
+    def get_follower_friends( self, authorize, filepath ):
+        '''
+        Return : CSV of target profile's follower's friends
+        screen_name | following
+        --------------------------------------------------
+        authorize : tweepy OAuthHandler object
+        filepath  : location to save output
+        '''
+        api = API( 
+            authorize, 
+            wait_on_rate_limit        = True,
+            wait_on_rate_limit_notify = True
+        )
+
+        follower_friends = {
+            'screen_name' : [],
+            'following'   : []
+        }
+
+        try:
+            follower_data = read_csv( c.FOLLOWER_DATA_CSV )
+        except: 
+            print( "File does not exist. Try running GetFromTwitter().get_follower_data()" )
+        
+        for _, follower in follower_data.iterrows():
+            try: 
+                follower_friends[ 'following'   ].append( str( api.friends_ids( follower[ 'screen_name' ] ) ) )
+                follower_friends[ 'screen_name' ].append( follower[ 'screen_name' ] )
+            except: 
+                continue
+
+        self.save.write_to_csv_file( filepath, DataFrame( follower_friends ) )

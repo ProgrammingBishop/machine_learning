@@ -8,8 +8,8 @@ TARGET_TRACK_LIST  = [
 ]
 
 START_STATUS_COUNT = 0
-END_STATUS_COUNT   = 1
-MAX_FOLLOWER_PAGES = math.ceil( 1 / 20 ) # Pages = Total / Number per Page
+END_STATUS_COUNT   = 10000
+MAX_FOLLOWER_PAGES = math.ceil( 2000 / 20 ) # Pages = Total / Number per Page
 
 # Obtain Credentials
 credentials = os.fspath( os.getcwd() )
