@@ -3,9 +3,7 @@ from pandas     import DataFrame, read_csv
 from SaveToFile import SaveToFile
 
 import configurations as c
-import time
-import sys
-import json
+import time, sys, json, ast, collections
 
 class GetFromTwitter():
     save = SaveToFile()
@@ -165,3 +163,55 @@ class GetFromTwitter():
             tracker += 1
 
         self.save.write_to_csv_file( filepath, DataFrame( follower_data ) )
+
+
+    def get_most_popular_friends( self, authorize, filepath ):
+        '''
+        Return : CSV of target profile's follower's friends
+        screen_name | following
+        --------------------------------------------------
+        authorize : tweepy OAuthHandler object
+        filepath  : location to save output
+        '''
+        api = API( 
+            authorize, 
+            wait_on_rate_limit        = True,
+            wait_on_rate_limit_notify = True
+        )
+
+        # Create List of all IDs
+        friends_data = read_csv( filepath )
+        followers    = friends_data[ 'following' ].apply( lambda ids : ast.literal_eval( ids ) )
+
+        followed_friends = []
+
+        for friends in followers:
+            followed_friends += friends
+
+        # Get Count of each IDs Occurrence
+        friend_counts        = collections.Counter( followed_friends )
+        sorted_friend_counts = collections.OrderedDict( sorted( 
+            friend_counts.items(), 
+            key = lambda kv: 
+            kv[1], 
+            reverse = True
+        ) )
+
+        # Get DataFrame of Top Friended
+        top_friends_followed = {
+            'screen_name' : [],
+            'description' : [],
+            'followed_by' : []
+        }
+
+        current_friend = None
+
+        for friend in range( c.TOP_MOST_FOLLOWED ):
+            current_friend = api.get_user( list( sorted_friend_counts.keys()   )[ friend ] )
+            current_count  =               list( sorted_friend_counts.values() )[ friend ]
+
+            top_friends_followed[ 'screen_name' ].append( current_friend.screen_name )
+            top_friends_followed[ 'description' ].append( current_friend.description )
+            top_friends_followed[ 'followed_by' ].append( current_count )
+
+        self.save.write_to_csv_file( c.TOP_FRIENDS_FOLLOWED_CSV, DataFrame( top_friends_followed ) )

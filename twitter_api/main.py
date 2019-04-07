@@ -45,6 +45,7 @@ if __name__ == '__main__':
 
         if steps[3] == 't':
             print( "Now getting the follower's friends..." )
-            # Get Tracked Profile's Follower's Friends
-            # --------------------------------------------------
             get_from_twitter.get_follower_friends( authorize, c.FOLLOWER_FRIENDS_CSV )
+
+            print( "Lastly getting the top-most followed friends' data..." )
+            get_from_twitter.get_most_popular_friends( authorize, c.FOLLOWER_FRIENDS_CSV )

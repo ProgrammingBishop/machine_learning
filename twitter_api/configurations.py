@@ -10,6 +10,7 @@ TARGET_TRACK_LIST  = [
 START_STATUS_COUNT = 0
 END_STATUS_COUNT   = 10000
 MAX_FOLLOWER_PAGES = math.ceil( 2000 / 20 ) # Pages = Total / Number per Page
+TOP_MOST_FOLLOWED  = 3
 
 # Obtain Credentials
 credentials = os.fspath( os.getcwd() )
@@ -24,9 +25,10 @@ CONSUMER_KEY        = credentials[ 'consumer_key'        ][0]
 CONSUMER_SECRET     = credentials[ 'consumer_secret'     ][0]
 
 # Save File Locations
-STREAM_DATA_TXT        = '.\\output\\blizzard_stream_data.txt'
-TARGET_STATUSES_TXT    = '.\\output\\blizzard_statuses_data.txt'
-STREAM_DATAFRAME_CSV   = '.\\output\\blizzard_stream_dataframe.csv'
-STATUSES_DATAFRAME_CSV = '.\\output\\blizzard_statuses_dataframe.csv'
-FOLLOWER_DATA_CSV      = '.\\output\\blizzard_follower_data.csv'
-FOLLOWER_FRIENDS_CSV   = '.\\output\\blizzard_follower_friends.csv'
+STREAM_DATA_TXT          = '.\\output\\blizzard_stream_data.txt'
+TARGET_STATUSES_TXT      = '.\\output\\blizzard_statuses_data.txt'
+STREAM_DATAFRAME_CSV     = '.\\output\\blizzard_stream_dataframe.csv'
+STATUSES_DATAFRAME_CSV   = '.\\output\\blizzard_statuses_dataframe.csv'
+FOLLOWER_DATA_CSV        = '.\\output\\blizzard_follower_data.csv'
+FOLLOWER_FRIENDS_CSV     = '.\\output\\blizzard_follower_friends.csv'
+TOP_FRIENDS_FOLLOWED_CSV = '.\\output\\blizzard_top_friends_followed.csv'
