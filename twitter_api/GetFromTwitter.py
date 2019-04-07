@@ -10,44 +10,7 @@ import json
 class GetFromTwitter():
     save = SaveToFile()
 
-    def get_follower_data( self, user_name, authorize, filepath ):
-        '''
-        Return : csv of followers and their friends
-        screen_name | friends_ids
-        --------------------------------------------------
-        user_name : Twitter profile getting followers from
-        authorize : tweepy OAuthHandler object
-        filepath  : location to save output
-        '''
-        api = API( 
-            authorize, 
-            wait_on_rate_limit        = True,
-            wait_on_rate_limit_notify = True
-        )
-
-        tracker       = 0
-        follower_data = {
-            'screen_name' : [],
-            'description' : [],
-            'location'    : []
-        }
-
-        for page in Cursor( api.followers, screen_name = user_name, languages = [ 'en' ] ).pages( c.MAX_FOLLOWER_PAGES ):
-            print( "Progress: {}%"\
-                .format( str( round( tracker / c.MAX_FOLLOWER_PAGES * 100, 2 ) ) ) )
-
-            for follower in page:
-                follower_data[ 'screen_name' ].append( follower._json[ 'screen_name' ] )
-                follower_data[ 'description' ].append( follower._json[ 'description' ] )
-                follower_data[ 'location'    ].append( follower._json[ 'location' ] )
-            
-            time.sleep( 60 )
-            tracker += 1
-
-        self.save.write_to_csv_file( filepath, DataFrame( follower_data ) )
-
-
-    def get_tweets( self, tweet_file ):
+    def __get_tweets( self, tweet_file ):
         '''
         Return : JSON tweet data as Python list
         --------------------------------------------------
@@ -73,12 +36,12 @@ class GetFromTwitter():
 
     def stream_data_to_csv( self, filepath ):
         '''
-        Return : CSV of Python list created by get_tweets()
+        Return : CSV of Python list created by __get_tweets()
         text | screen_name | description | created_at
         --------------------------------------------------
         filepath : location to save output
         '''
-        tweets      = self.get_tweets( c.STREAM_DATA_TXT )
+        tweets      = self.__get_tweets( c.STREAM_DATA_TXT )
         tweets_data = {
             'text'          : [],
             'screen_name'   : [],
@@ -132,6 +95,7 @@ class GetFromTwitter():
 
         self.save.write_to_csv_file( filepath, DataFrame( update_data ) )
 
+
     def get_follower_friends( self, authorize, filepath ):
         '''
         Return : CSV of target profile's follower's friends
@@ -164,3 +128,40 @@ class GetFromTwitter():
                 continue
 
         self.save.write_to_csv_file( filepath, DataFrame( follower_friends ) )
+
+    
+    def get_follower_data( self, user_name, authorize, filepath ):
+        '''
+        Return : csv of followers and their friends
+        screen_name | friends_ids
+        --------------------------------------------------
+        user_name : Twitter profile getting followers from
+        authorize : tweepy OAuthHandler object
+        filepath  : location to save output
+        '''
+        api = API( 
+            authorize, 
+            wait_on_rate_limit        = True,
+            wait_on_rate_limit_notify = True
+        )
+
+        tracker       = 0
+        follower_data = {
+            'screen_name' : [],
+            'description' : [],
+            'location'    : []
+        }
+
+        for page in Cursor( api.followers, screen_name = user_name, languages = [ 'en' ] ).pages( c.MAX_FOLLOWER_PAGES ):
+            print( "Progress: {}%"\
+                .format( str( round( tracker / c.MAX_FOLLOWER_PAGES * 100, 2 ) ) ) )
+
+            for follower in page:
+                follower_data[ 'screen_name' ].append( follower._json[ 'screen_name' ] )
+                follower_data[ 'description' ].append( follower._json[ 'description' ] )
+                follower_data[ 'location'    ].append( follower._json[ 'location' ] )
+            
+            time.sleep( 60 )
+            tracker += 1
+
+        self.save.write_to_csv_file( filepath, DataFrame( follower_data ) )
