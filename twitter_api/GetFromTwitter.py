@@ -93,40 +93,6 @@ class GetFromTwitter():
 
         self.save.write_to_csv_file( filepath, DataFrame( update_data ) )
 
-
-    def get_follower_friends( self, authorize, filepath ):
-        '''
-        Return : CSV of target profile's follower's friends
-        screen_name | following
-        --------------------------------------------------
-        authorize : tweepy OAuthHandler object
-        filepath  : location to save output
-        '''
-        api = API( 
-            authorize, 
-            wait_on_rate_limit        = True,
-            wait_on_rate_limit_notify = True
-        )
-
-        follower_friends = {
-            'screen_name' : [],
-            'following'   : []
-        }
-
-        try:
-            follower_data = read_csv( c.FOLLOWER_DATA_CSV )
-        except: 
-            print( "File does not exist. Try running GetFromTwitter().get_follower_data()" )
-        
-        for _, follower in follower_data.iterrows():
-            try: 
-                follower_friends[ 'following'   ].append( str( api.friends_ids( follower[ 'screen_name' ] ) ) )
-                follower_friends[ 'screen_name' ].append( follower[ 'screen_name' ] )
-            except: 
-                continue
-
-        self.save.write_to_csv_file( filepath, DataFrame( follower_friends ) )
-
     
     def get_follower_data( self, user_name, authorize, filepath ):
         '''
@@ -163,6 +129,44 @@ class GetFromTwitter():
             tracker += 1
 
         self.save.write_to_csv_file( filepath, DataFrame( follower_data ) )
+
+
+    def get_follower_friends( self, authorize, filepath ):
+        '''
+        Return : CSV of target profile's follower's friends
+        screen_name | following
+        --------------------------------------------------
+        authorize : tweepy OAuthHandler object
+        filepath  : location to save output
+        '''
+        api = API( 
+            authorize, 
+            wait_on_rate_limit        = True,
+            wait_on_rate_limit_notify = True
+        )
+
+        follower_friends = {
+            'screen_name' : [],
+            'following'   : []
+        }
+
+        try:
+            follower_data = read_csv( c.FOLLOWER_DATA_CSV )
+        except: 
+            print( "File does not exist. Try running GetFromTwitter().get_follower_data()" )
+        
+        for index, follower in follower_data.iterrows():
+            try: 
+                follower_friends[ 'following'   ].append( str( api.friends_ids( follower[ 'screen_name' ] ) ) )
+                follower_friends[ 'screen_name' ].append( follower[ 'screen_name' ] )
+            except: 
+                continue
+
+            if index / 50 == 0:
+                print( "Progress: {}%"\
+                    .format( str( round( index / c.TOTAL_FOLLOWER_COUNT * 100, 2 ) ) ) )
+
+        self.save.write_to_csv_file( filepath, DataFrame( follower_friends ) )
 
 
     def get_most_popular_friends( self, authorize, filepath ):
@@ -213,5 +217,9 @@ class GetFromTwitter():
             top_friends_followed[ 'screen_name' ].append( current_friend.screen_name )
             top_friends_followed[ 'description' ].append( current_friend.description )
             top_friends_followed[ 'followed_by' ].append( current_count )
+
+            if friend / 10 == 0:
+                print( "Progress: {}%"\
+                    .format( str( round( friend / c.TOP_MOST_FOLLOWED * 100, 2 ) ) ) )
 
         self.save.write_to_csv_file( c.TOP_FRIENDS_FOLLOWED_CSV, DataFrame( top_friends_followed ) )

@@ -7,10 +7,11 @@ TARGET_TRACK_LIST  = [
     'Blizzard',    'StarCraft', 'Esports' 
 ]
 
-START_STATUS_COUNT = 0
-END_STATUS_COUNT   = 10000
-MAX_FOLLOWER_PAGES = math.ceil( 2000 / 20 ) # Pages = Total / Number per Page
-TOP_MOST_FOLLOWED  = 3
+START_STATUS_COUNT   = 0
+END_STATUS_COUNT     = 10000
+TOTAL_FOLLOWER_COUNT = 2000
+MAX_FOLLOWER_PAGES   = math.ceil( TOTAL_FOLLOWER_COUNT / 20 ) # Pages = Total / Number per Page
+TOP_MOST_FOLLOWED    = 250
 
 # Obtain Credentials
 credentials = os.fspath( os.getcwd() )
