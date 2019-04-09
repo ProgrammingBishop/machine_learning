@@ -11,7 +11,13 @@ START_STATUS_COUNT   = 0
 END_STATUS_COUNT     = 10000
 TOTAL_FOLLOWER_COUNT = 2000
 MAX_FOLLOWER_PAGES   = math.ceil( TOTAL_FOLLOWER_COUNT / 20 ) # Pages = Total / Number per Page
-TOP_MOST_FOLLOWED    = 250
+# Follower Iterations Breakdown:
+    # Refreshes = Followers Tracked / 15 (Rate Limit Hit every 15 Requests)
+    # Minutes   = Refreshes * 15 (Refresh Time for Next Request is 15 Minutes)
+    # Hours     = Minutes / 60
+    # Example   : 750 Followers Tracked = 12.5 Hours to Complete
+FOLLOWER_ITERATONS   = 750 
+TOP_MOST_FOLLOWED    = 2000
 
 # Obtain Credentials
 credentials = os.fspath( os.getcwd() )

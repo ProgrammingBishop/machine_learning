@@ -162,9 +162,12 @@ class GetFromTwitter():
             except: 
                 continue
 
-            if index / 50 == 0:
+            if index % 5 == 0:
                 print( "Progress: {}%"\
-                    .format( str( round( index / c.TOTAL_FOLLOWER_COUNT * 100, 2 ) ) ) )
+                    .format( str( round( index / c.FOLLOWER_ITERATONS * 100, 2 ) ) ) )
+
+            if index == c.FOLLOWER_ITERATONS:
+                break
 
         self.save.write_to_csv_file( filepath, DataFrame( follower_friends ) )
 
@@ -211,12 +214,15 @@ class GetFromTwitter():
         current_friend = None
 
         for friend in range( c.TOP_MOST_FOLLOWED ):
-            current_friend = api.get_user( list( sorted_friend_counts.keys()   )[ friend ] )
-            current_count  =               list( sorted_friend_counts.values() )[ friend ]
+            try:
+                current_friend = api.get_user( list( sorted_friend_counts.keys()   )[ friend ] )
+                current_count  =               list( sorted_friend_counts.values() )[ friend ]
 
-            top_friends_followed[ 'screen_name' ].append( current_friend.screen_name )
-            top_friends_followed[ 'description' ].append( current_friend.description )
-            top_friends_followed[ 'followed_by' ].append( current_count )
+                top_friends_followed[ 'screen_name' ].append( current_friend.screen_name )
+                top_friends_followed[ 'description' ].append( current_friend.description )
+                top_friends_followed[ 'followed_by' ].append( current_count )
+            except: 
+                continue
 
             if friend / 10 == 0:
                 print( "Progress: {}%"\
