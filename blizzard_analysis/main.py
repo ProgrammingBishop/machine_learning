@@ -6,5 +6,5 @@ if __name__ == "__main__":
     explore_market = ExploreMarketSegmentation()
 
     # Generate Sparse Matrix
-    # explore_market.convert_to_sparse( c.FOLLOWER_FRIENDS_CSV )
-    explore_market.get_barplot_of_top_followed( c.TOP_FRIENDS_FOLLOWED_CSV, c.MAX_TO_PLOT )
+    explore_market.convert_to_sparse( c.FOLLOWER_FRIENDS_CSV, c.TOP_N )
+    # explore_market.get_barplot_of_top_followed( c.TOP_FRIENDS_FOLLOWED_CSV, c.TOP_N )

@@ -224,7 +224,7 @@ class GetFromTwitter():
             except: 
                 continue
 
-            if friend / 10 == 0:
+            if friend % 10 == 0:
                 print( "Progress: {}%"\
                     .format( str( round( friend / c.TOP_MOST_FOLLOWED * 100, 2 ) ) ) )
 

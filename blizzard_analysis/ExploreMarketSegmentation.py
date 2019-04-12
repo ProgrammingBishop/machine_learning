@@ -4,42 +4,56 @@ import matplotlib.pyplot as plt
 import seaborn           as sns
 import configurations    as c
 import ast
+import collections
 
 from SaveToFile import SaveToFile
 
 class ExploreMarketSegmentation():
     save = SaveToFile()
 
-    def convert_to_sparse( self, filepath ):
+    def convert_to_sparse( self, filepath, top_n ):
         '''
         Returns : sparse matrix of binary variables; 0 = not following | 1 = following
         --------------------------------------------------
         filepath : location to obtain data
+        top_n    : number of top most friended to plot (number + 1: upper-bound exclusive)
         '''
-        follower_data = pd.read_csv( filepath )
-        followed      = follower_data[ 'following' ].apply( lambda ids : ast.literal_eval( ids ) )
-        features      = []
+        follower_data                = pd.read_csv( filepath )
+        follower_data[ 'following' ] = follower_data[ 'following' ].apply( lambda ids : ast.literal_eval( ids ) )
+        friends                      = []
 
-        # Obtain Set of Indexes
-        for friend in followed:
-            features += friend
+        # Obtain Top Friends as Features
+        for follower_friends in follower_data[ 'following' ]:
+            friends += follower_friends
 
-        # Convert Friend IDs to Features
-        column_names                  = set( features )
-        print(len( column_names) )
-        print(len(features))
-        # sparse_matrix                 = { 'ID' : follower_data[ 'screen_name' ] }
-        # sparse_matrix[ column_names ] = 0
+        features        = collections.Counter( friends )
+        sorted_features = collections.OrderedDict( sorted( 
+            features.items(), 
+            key = lambda kv: 
+            kv[1], 
+            reverse = True
+        ) )
 
-        # # For Every Follower
-        # for follower in follower_data:
-        #     # For Every Feature in Follower's Friends
-        #     for feature in follower[ 'following' ]:
-        #         # Flip Feature if Follower is Friends
-        #         if feature in column_names:
-        #             sparse_matrix[ feature ] = 1
+        friends = list( sorted_features.keys() )[ 0:top_n ]
+        friends = list( map( str, friends ) )
 
-        # self.save.write_to_csv_file( c.SPARSE_FRIENDS_MATRIX_CSV, pd.DataFrame( sparse_matrix ) )
+        sparse_matrix = pd.DataFrame( 
+            index   = follower_data[ 'screen_name' ], 
+            columns = friends
+        )
+
+        sparse_matrix = sparse_matrix.fillna( 0 )
+
+        for index, follower in follower_data.iterrows():
+            for friend in follower[ 'following' ]:
+                if str( friend ) in friends:
+                    sparse_matrix.loc[ sparse_matrix.index[ index ], str( friend ) ] = 1
+
+            if index % 100 == 0:
+                print( "Progress: {}%"\
+                    .format( str( round( index / len( follower_data ) * 100, 2 ) ) ) )
+
+        self.save.write_to_csv_file( c.SPARSE_FRIENDS_MATRIX_CSV, pd.DataFrame( sparse_matrix ) )
 
 
     def get_barplot_of_top_followed( self, filepath, top_n ):
@@ -68,6 +82,7 @@ class ExploreMarketSegmentation():
 
         g.set_title( 'Blizzard Followers most Friended', fontsize = 18 )
 
+        # Add Percentage for Each Bar
         for index, row in enumerate( bar_values ):
             g.text( 
                 x        = top_followed_df.loc[ top_followed_df.index[ index ], 'followed_by' ] + 20,

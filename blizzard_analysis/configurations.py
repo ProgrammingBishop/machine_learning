@@ -16,4 +16,4 @@ FOLLOWERS_MOST_FRIENDED_PDF = '.\\plots\\blizzard_followers_most_friended.pdf'
 
 # Constants
 # ==================================================
-MAX_TO_PLOT = 141
+TOP_N = 151
