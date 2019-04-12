@@ -19,6 +19,7 @@ class ExploreMarketSegmentation():
         top_n    : number of top most friended to plot (number + 1: upper-bound exclusive)
         '''
         follower_data                = pd.read_csv( filepath )
+        columns_names                = pd.read_csv( c.TOP_FRIENDS_FOLLOWED_CSV )
         follower_data[ 'following' ] = follower_data[ 'following' ].apply( lambda ids : ast.literal_eval( ids ) )
         friends                      = []
 
@@ -38,7 +39,7 @@ class ExploreMarketSegmentation():
         friends = list( map( str, friends ) )
 
         sparse_matrix = pd.DataFrame( 
-            index   = follower_data[ 'screen_name' ], 
+            index   = follower_data[ 'screen_name' ],
             columns = friends
         )
 
@@ -52,6 +53,9 @@ class ExploreMarketSegmentation():
             if index % 100 == 0:
                 print( "Progress: {}%"\
                     .format( str( round( index / len( follower_data ) * 100, 2 ) ) ) )
+
+        sparse_matrix.columns          = columns_names.loc[ columns_names.index[ 0:151 ], 'screen_name' ]
+        sparse_matrix[ 'screen_name' ] = list( follower_data[ 'screen_name' ] )
 
         self.save.write_to_csv_file( c.SPARSE_FRIENDS_MATRIX_CSV, pd.DataFrame( sparse_matrix ) )
 
