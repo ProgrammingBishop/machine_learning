@@ -11,6 +11,7 @@ TOP_FRIENDS_FOLLOWED_CSV = '.\\output\\blizzard_top_friends_followed.csv'
 
 # Generate through blizzard_analysis
 SPARSE_FRIENDS_MATRIX_CSV   = '.\\output\\blizzard_sparse_matrix.csv'
+SPARSE_MATRIX_WLABELS_CSV   = '.\\output\\blizzard_sparse_matrix_wlabels.csv'
 FOLLOWERS_MOST_FRIENDED_PDF = '.\\plots\\blizzard_followers_most_friended.pdf'
 
 

@@ -6,7 +6,8 @@ import configurations    as c
 import ast
 import collections
 
-from SaveToFile import SaveToFile
+from SaveToFile      import SaveToFile
+from sklearn.cluster import KMeans
 
 class ExploreMarketSegmentation():
     save = SaveToFile()
@@ -100,11 +101,47 @@ class ExploreMarketSegmentation():
         g.get_figure().savefig( c.FOLLOWERS_MOST_FRIENDED_PDF )
         
 
-    def FindOptimalK( self ):
-        return 
+    def FindOptimalK( self, filepath, top_n ):
+        '''
+        Returns : find optimal number of clusters
+        --------------------------------------------------
+        filepath : location to obtain data
+        top_n    : number of top most friended to plot (number + 1: upper-bound exclusive)
+        '''
+        sparse_matrix = pd.read_csv( filepath )
+        sparse_matrix = sparse_matrix.drop( 'screen_name', axis = 1 )
+        sum_squares   = []
+        clusters      = range( 1, top_n, 10 )
+
+        for k in clusters:
+            k_means = KMeans( n_clusters = k )
+            k_means = k_means.fit( sparse_matrix )
+            sum_squares.append( k_means.inertia_ )
+
+        plt.plot( clusters, sum_squares, 'go-' )
+        plt.xlabel( 'Clusters' )
+        plt.ylabel( 'Sum of Square Distances' )
+        plt.title( 'Selection for Optimal K' )
+        plt.show()
 
     
-    def PerformKMeans( self ):
-        return 
+    def CreateSegmentLabels( self, filepath, n_clusters ):
+        '''
+        Returns : plot clusters given data and number of centroids
+        --------------------------------------------------
+        filepath   : location to obtain data
+        n_clusters : number of centroids to plot 
+        '''
+        dataframe     = pd.read_csv( filepath )
+        sparse_matrix = dataframe.drop( [ 'screen_name', 'Blizzard_Ent' ], axis = 1 )
+
+        k_means = KMeans( n_clusters = n_clusters )
+        k_means.fit( sparse_matrix )
+
+        dataframe[ 'Cluster' ] = k_means.labels_
+        dataframe.drop( 'Blizzard_Ent', axis = 1, inplace = True )
+        dataframe.set_index( 'screen_name', inplace = True )
+
+        self.save.write_to_csv_file( c.SPARSE_MATRIX_WLABELS_CSV, pd.DataFrame( dataframe ), index = True )
 
     # TODO // create features from descriptions

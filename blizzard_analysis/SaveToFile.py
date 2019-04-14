@@ -9,9 +9,9 @@ class SaveToFile():
                 f.write( content_to_write )
                 f.close()
 
-    def write_to_csv_file( self, filepath, content_to_write ):
+    def write_to_csv_file( self, filepath, content_to_write, index = False ):
         '''
         filepath         : location to save output
         content_to_write : content to save at filepath argument 
         '''
-        content_to_write.to_csv( filepath, index = False )
+        content_to_write.to_csv( filepath, index = index )
