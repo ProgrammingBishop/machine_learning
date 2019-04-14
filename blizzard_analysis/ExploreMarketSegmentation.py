@@ -87,7 +87,7 @@ class ExploreMarketSegmentation():
     
     def create_cluster_labels( self, filepath, n_clusters ):
         '''
-        Returns : plot clusters given data and number of centroids
+        Returns : CSV with row indexes follower screen_name and new column Cluster for labels
         --------------------------------------------------
         filepath   : location to obtain data
         n_clusters : number of centroids to plot 

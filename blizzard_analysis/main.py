@@ -15,4 +15,4 @@ if __name__ == "__main__":
 
     # Find Optimal K and Plot K-Means
     # explore_market.find_optimal_k( c.SPARSE_FRIENDS_MATRIX_CSV, c.TOP_N )
-    explore_market.create_cluster_labels( c.SPARSE_FRIENDS_MATRIX_CSV, 20 )
+    # explore_market.create_cluster_labels( c.SPARSE_FRIENDS_MATRIX_CSV, c.CLUSTERS )
