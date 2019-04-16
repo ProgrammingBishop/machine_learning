@@ -9,6 +9,7 @@ import collections
 from SaveToFile      import SaveToFile
 from sklearn.cluster import KMeans
 
+
 class ExploreMarketSegmentation():
     save = SaveToFile()
 

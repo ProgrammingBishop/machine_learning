@@ -3,6 +3,7 @@ import seaborn           as sns
 import pandas            as pd 
 import configurations    as c
 
+
 class PlotData():
     def get_barplot_of_top_followed( self, filepath, top_n ):
         '''
