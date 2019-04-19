@@ -5,7 +5,7 @@
 As of April 18, 2019 the parts of this project that have been completed are the following:
 
 - Obtaining the target data
-- Beginning to refactor the code into classes for reuse on other Twitter/Tweepy-related tasks. There is still much progress to be made on this part
+- Beginning to refactor the code into classes for reuse on other Twitter/Tweepy-related tasks. There is still much progress to be made on this part.
 - Creating a barplot for users Blizzard Entertainment's followers also follow
 - Creating the beginning feature space to be used for segmentation. This is currently a sparse matrix consisting of binary feature values reflecting on whether or not a Blizzard follower is following another user.
 - The beginning class for K-Means that can display the elbow plot for the ideal K based on the above matrix specified, create k clusters, and create a label column for which cluster a user belongs to.
@@ -14,8 +14,9 @@ As of April 18, 2019 the parts of this project that have been completed are the 
 When time is sufficient, the following are tasks to still be completed:
 
 - Finalize refactoring of classes, the user interface through the command line, and the reuse of these classes for other Twitter/Tweepy-related tasks. Current code is operational, but not optimized enough for recycling, scalability, and maintainability.
-- Finalize the feature space based on word association. This will be handled with the Natural Language Toolkit (NLTK) library.
-- Using the NLTK library to analyze tweets based on popular topics and sentiment of users (positive or negative), espeically to understand which tweeted topics are most successful or least successful.
+- Finalize the feature space based on word association. This will be handled with the Natural Language Toolkit (NLTK) library. This will bring diversity to the current sparse matrix and most likely update the prototype labels set for the users. The additional features will be created based on user descriptions and location.
+- Using the NLTK library to analyze tweets based on popular topics and sentiment of users (positive or negative), especially to understand which tweeted topics are most successful or least successful.
+- Create a final report for these findings
 
 ## Purpose
 Using Tweepy and Python the goal of this project is to understand Blizzard Entertainment's followers and engagement through the Twitter platform. The target information to retrieve include:
