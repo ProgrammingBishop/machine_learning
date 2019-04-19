@@ -33,9 +33,9 @@ Using Tweepy and Python the goal of this project is to understand Blizzard Enter
 - Who do followers of Blizzard Entertainment tend to also follow?
 - What products of Blizzard Entertainment are followed? Which are popular or not so popular?
 - Can the other users that Blizzard Entertainment's followers also follow be categorized by industry? Are they related to the gaming industry?
-- Are there competitors based on who users also follow? If so are the similar or different to Blizzard Entertainment?
+- Are there competitors based on who users also follow? If so are they similar or different to Blizzard Entertainment?
 - What products, organizations, or celebrities can be targeted to endorse Blizzard Entertainment?
 - Is there a reason some Blizzard products are followed more than others?
-- How can does the market diversify between segments?
+- How does the market diversify between segments?
 - Are there similar interests or disinterests between segments?
 - Are there opportunities from other users Blizzard Entertainment's followers also follow? Essentially what do they do different that Blizzard Entertainment is not doing but could be doing for increased user follower engagement?
