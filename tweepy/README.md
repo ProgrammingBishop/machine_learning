@@ -1,4 +1,4 @@
-# Blizzard Entertainment Market Segmentation using Tweepy Library
+# Blizzard Entertainment Market Segmentation using Tweepy Library (Still in Progress)
 #### On hiatus for completion due to current obligations
 
 ## Progress
