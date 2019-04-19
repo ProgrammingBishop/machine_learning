@@ -19,14 +19,16 @@ When time is sufficient, the following are tasks to still be completed:
 - Create a final report for these findings
 
 ## Purpose
-Using Tweepy and Python the goal of this project is to understand Blizzard Entertainment's followers and engagement through the Twitter platform. The target information to retrieve include:
+Using Tweepy and Python the goal of this project is to understand Blizzard Entertainment's followers and engagement through the Twitter platform. 
+
+#### The target information to retrieve include:
 
 - Follower data, specifically screen name (for lookup in other methods), description, and location
 - Blizzard Entertainment's profile tweets
 - Tweets streaming in related to Blizzard Entertainment and various tracked topics related to Blizzard Entertainment's products
 - The users that Blizzard Entertainment's followers are following
 
-By leveraging this information, the following questions can be explored further:
+#### By leveraging this information, the following questions can be explored further:
 
 - Who do followers of Blizzard Entertainment tend to also follow?
 - What products of Blizzard Entertainment are followed? Which are popular or not so popular?
