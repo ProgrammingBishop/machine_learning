@@ -2,11 +2,11 @@ import pandas         as pd
 import configurations as c
 
 from nltk.tokenize import word_tokenize
-from SaveToFile    import SaveToFile
+from Utilities     import Utilities
 
 
 class TextAnalysis():
-    save = SaveToFile()
+    utilities = Utilities()
 
     def tokenize_description( self, filepath ):
         '''
@@ -25,7 +25,7 @@ class TextAnalysis():
             tokens[ 'screen_name'   ].append( follower[ 'screen_name' ] )
             tokens[ 'tokenize_desc' ].append( word_tokenize( follower[ 'description' ] ) )
 
-        self.save.write_to_csv_file( c.TOKENIZED_DESCRIPTIONS, pd.DataFrame( tokens ) )
+        self.utilities.write_to_file( c.TOKENIZED_DESCRIPTIONS, pd.DataFrame( tokens ) )
 
     def map_reduce( self ):
         return

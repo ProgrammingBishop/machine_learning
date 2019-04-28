@@ -6,12 +6,12 @@ import configurations    as c
 import ast
 import collections
 
-from SaveToFile      import SaveToFile
+from Utilities       import Utilities
 from sklearn.cluster import KMeans
 
 
 class ExploreMarketSegmentation():
-    save = SaveToFile()
+    utilities = Utilities()
 
     def convert_to_sparse( self, filepath, top_n ):
         '''
@@ -59,7 +59,7 @@ class ExploreMarketSegmentation():
         sparse_matrix.columns          = columns_names.loc[ columns_names.index[ 0:151 ], 'screen_name' ]
         sparse_matrix[ 'screen_name' ] = list( follower_data[ 'screen_name' ] )
 
-        self.save.write_to_csv_file( c.SPARSE_FRIENDS_MATRIX_CSV, pd.DataFrame( sparse_matrix ) )
+        self.utilities.write_to_file( c.SPARSE_FRIENDS_MATRIX_CSV, pd.DataFrame( sparse_matrix ) )
         
 
     def find_optimal_k( self, filepath, top_n ):
@@ -103,4 +103,4 @@ class ExploreMarketSegmentation():
         dataframe.drop( 'Blizzard_Ent', axis = 1, inplace = True )
         dataframe.set_index( 'screen_name', inplace = True )
 
-        self.save.write_to_csv_file( c.SPARSE_MATRIX_WLABELS_CSV, pd.DataFrame( dataframe ), index = True )
+        self.utilities.write_to_file( c.SPARSE_MATRIX_WLABELS_CSV, pd.DataFrame( dataframe ), index = True )
