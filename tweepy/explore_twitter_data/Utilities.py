@@ -12,7 +12,7 @@ class Utilities():
         print( f"Progress: { str( round( progress / completion * 100, 2 ) ) }%" )
 
 
-    def write_to_file( self, filepath, content_to_write, write_mode = 'a' ):
+    def write_to_file( self, filepath, content_to_write, write_mode = 'a', index = False ):
         '''
         Return : file containing data passed at location specified
         --------------------------------------------------
@@ -21,7 +21,7 @@ class Utilities():
         write_mode       : method to write to file (i.e "a" for append and "w" to clear and write)
         '''
         if '.csv' in filepath:
-            content_to_write.to_csv( filepath, index = False )
+            content_to_write.to_csv( filepath, index = index )
 
         if '.txt' in filepath:
             with open( filepath, write_mode, encoding = 'utf8' ) as f:

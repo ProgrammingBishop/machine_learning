@@ -7,7 +7,7 @@ import configurations    as c
 class PlotData():
     def get_barplot_of_top_followed( self, filepath, top_n ):
         '''
-        Returns : barplot of blizzard followers most friended
+        Returns : pdf of barplot depicting top users followed by target's followers
         --------------------------------------------------
         filepath : location to obtain data
         top_n    : number of top most friended to plot (number + 1: upper-bound exclusive)
