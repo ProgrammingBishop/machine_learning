@@ -1,6 +1,7 @@
 import sys
 
-class GetUserInput:
+class DefineApplication:
+    # PRIVATE
     def __get_user_input( self, message ):
         input_answer = ''
 
@@ -20,12 +21,22 @@ class GetUserInput:
         return input_answer
 
 
+    # PUBLIC
     def define_program( self ):
+        '''
+        Return : list of bool values for steps to take
+        --------------------------------------------------
+        '''
         program_steps = []
 
-        program_steps.append( self.__get_user_input( "Get streamed tweet data?" ) )
-        program_steps.append( self.__get_user_input( "Get profle's tweet data?" ) )
-        program_steps.append( self.__get_user_input( "Get follower data?" ) )
-        program_steps.append( self.__get_user_input( "Get friends of followers?" ) )
+        steps = [
+            "Get related streamed tweet data?",
+            "Get user's profile tweet data?",
+            "Get user's follower data?",
+            "Get friends of followers?"
+        ]
+
+        for step in steps:
+            program_steps.append( self.__get_user_input( step ) )
 
         return program_steps

@@ -1,19 +1,27 @@
 from tweepy     import Cursor, API  
-from pandas     import DataFrame, read_csv 
-from SaveToFile import SaveToFile
+from pandas     import DataFrame, read_csv
+from Utilities  import Utilities
 
 import configurations as c
 import time, sys, json, ast, collections
 
 class GetFromTwitter():
-    save = SaveToFile()
+    # PRIVATE
+    utility   = None
+    authorize = None
+    api       = None
+
+    def __init__( self, authorize ):
+        self.utility   = Utilities()
+        self.authorize = authorize
+        self.api       = API( 
+            self.authorize, 
+            wait_on_rate_limit        = True,
+            wait_on_rate_limit_notify = True
+        )
+
 
     def __get_tweets( self, tweet_file ):
-        '''
-        Return : JSON tweet data as Python list
-        --------------------------------------------------
-        tweet_file : Tweet stream text file to extract tweets from
-        '''
         tweets = []
 
         try:
@@ -32,9 +40,10 @@ class GetFromTwitter():
         return tweets
 
 
-    def stream_data_to_csv( self, filepath ):
+    # PUBLIC
+    def stream_to_csv( self, filepath ):
         '''
-        Return : CSV of Python list created by __get_tweets()
+        Return : .csv containing the following features
         text | screen_name | description | created_at
         --------------------------------------------------
         filepath : location to save output
@@ -49,102 +58,86 @@ class GetFromTwitter():
 
         for tweet in tweets:
             if ( not tweet[ 'retweeted' ] ) and ( 'RT @' not in tweet[ 'text' ] ):
+                tweet_text = tweet[ 'text' ]
+
                 if 'extended_tweet' in tweet:
-                    extended_tweet = str( tweet[ 'extended_tweet' ] ).split( ": " )[1].split( "\', \'" )[0]
-                    tweets_data[ 'text' ].append( extended_tweet )
-                else:
-                    tweets_data[ 'text' ].append( tweet[ 'text' ] )
+                    tweet_text = str( tweet[ 'extended_tweet' ] ).split( ": " )[1].split( "\', \'" )[0]
 
-                tweets_data[ 'screen_name' ].append( tweet[ 'user' ][ 'screen_name' ] )
-                tweets_data[ 'description' ].append( tweet[ 'user' ][ 'description' ] )
-                tweets_data[ 'created_at'  ].append( tweet[ 'user' ][ 'created_at'  ] )
+                tweets_data[ 'text' ].append( tweet_text )
 
-        self.save.write_to_csv_file( filepath, DataFrame( tweets_data ) )
+                for feature in tweets_data.keys():
+                    if feature == 'text':
+                        continue
+
+                    tweets_data[ feature ].append( tweet[ 'user' ][ feature ] )
+
+        self.utility.write_to_file( filepath, DataFrame( tweets_data ) )
 
 
-    def status_data_to_csv( self, authorize, filepath ):
+    def tweets_to_csv( self, filepath ):
         '''
-        Return : CSV of api.user_timeline object
+        Return : .csv containing the following features
         created_at | full_text
         --------------------------------------------------
-        authorize : tweepy OAuthHandler object
         filepath  : location to save output
         '''
-        api = API( 
-            authorize, 
-            wait_on_rate_limit        = True,
-            wait_on_rate_limit_notify = True
-        )
-
         update_data = {
             'created_at' : [],
             'full_text'  : []
         }
 
         for update in Cursor( 
-            api.user_timeline, 
+            self.api.user_timeline, 
             screen_name = c.TARGET_SCREEN_NAME, 
             lang        = 'en', 
             tweet_mode  = 'extended', 
             include_rts = True 
         ).items( c.END_STATUS_COUNT ):
-            update_data[ 'created_at' ].append( update._json[ 'created_at' ] )
-            update_data[ 'full_text'  ].append( update._json[ 'full_text' ] )
+            for feature in update_data.keys():
+                update_data[ feature ].append( update._json[ feature ] )
 
-        self.save.write_to_csv_file( filepath, DataFrame( update_data ) )
+        self.utility.write_to_file( filepath, DataFrame( update_data ) )
 
     
-    def get_follower_data( self, user_name, authorize, filepath ):
+    def followers_to_csv( self, user_name, filepath ):
         '''
-        Return : csv of followers and their friends
-        screen_name | friends_ids
+        Return : .csv containing the following features
+        screen_name | friend_ids
         --------------------------------------------------
         user_name : Twitter profile getting followers from
-        authorize : tweepy OAuthHandler object
         filepath  : location to save output
         '''
-        api = API( 
-            authorize, 
-            wait_on_rate_limit        = True,
-            wait_on_rate_limit_notify = True
-        )
-
-        tracker       = 0
         follower_data = {
             'screen_name' : [],
             'description' : [],
             'location'    : []
         }
 
-        for page in Cursor( api.followers, screen_name = user_name, languages = [ 'en' ] ).pages( c.MAX_FOLLOWER_PAGES ):
-            print( "Progress: {}%"\
-                .format( str( round( tracker / c.MAX_FOLLOWER_PAGES * 100, 2 ) ) ) )
+        for tracker, page in enumerate( 
+            Cursor( 
+                self.api.followers, 
+                screen_name = user_name, 
+                languages   = [ 'en' ] 
+            ).pages( c.MAX_FOLLOWER_PAGES ) 
+        ):
+            self.utility.print_progress( tracker, c.MAX_FOLLOWER_PAGES )
 
             for follower in page:
-                follower_data[ 'screen_name' ].append( follower._json[ 'screen_name' ] )
-                follower_data[ 'description' ].append( follower._json[ 'description' ] )
-                follower_data[ 'location'    ].append( follower._json[ 'location' ] )
+                for feature in follower_data.keys():
+                    follower_data[ feature ].append( follower._json[ feature ] )
             
             time.sleep( 60 )
-            tracker += 1
 
-        self.save.write_to_csv_file( filepath, DataFrame( follower_data ) )
+        self.utility.write_to_file( filepath, DataFrame( follower_data ) )
 
 
-    def get_follower_friends( self, authorize, filepath ):
+    def follower_friends_to_csv( self, filepath ):
         '''
-        Return : CSV of target profile's follower's friends
+        Return : .csv containing the following features
         screen_name | following
         --------------------------------------------------
-        authorize : tweepy OAuthHandler object
         filepath  : location to save output
         '''
-        api = API( 
-            authorize, 
-            wait_on_rate_limit        = True,
-            wait_on_rate_limit_notify = True
-        )
-
         follower_friends = {
             'screen_name' : [],
             'following'   : []
@@ -153,43 +146,34 @@ class GetFromTwitter():
         try:
             follower_data = read_csv( c.FOLLOWER_DATA_CSV )
         except: 
-            print( "File does not exist. Try running GetFromTwitter().get_follower_data()" )
+            print( "File does not exist. Try running GetFromTwitter().followers_to_csv()" )
         
         for index, follower in follower_data.iterrows():
             try: 
-                follower_friends[ 'following'   ].append( str( api.friends_ids( follower[ 'screen_name' ] ) ) )
+                follower_friends[ 'following'   ].append( str( self.api.friends_ids( follower[ 'screen_name' ] ) ) )
                 follower_friends[ 'screen_name' ].append( follower[ 'screen_name' ] )
             except: 
                 continue
 
             if index % 5 == 0:
-                print( "Progress: {}%"\
-                    .format( str( round( index / c.FOLLOWER_ITERATONS * 100, 2 ) ) ) )
+                self.utility.print_progress( index, c.FOLLOWER_ITERATONS )
 
             if index == c.FOLLOWER_ITERATONS:
                 break
 
-        self.save.write_to_csv_file( filepath, DataFrame( follower_friends ) )
+        self.utility.write_to_file( filepath, DataFrame( follower_friends ) )
 
 
-    def get_most_popular_friends( self, authorize, filepath ):
+    def popular_friends_to_csv( self, filepath ):
         '''
-        Return : CSV of target profile's follower's friends
+        Return : .csv containing the following features
         screen_name | following
         --------------------------------------------------
-        authorize : tweepy OAuthHandler object
         filepath  : location to save output
         '''
-        api = API( 
-            authorize, 
-            wait_on_rate_limit        = True,
-            wait_on_rate_limit_notify = True
-        )
-
         # Create List of all IDs
-        friends_data = read_csv( filepath )
-        followers    = friends_data[ 'following' ].apply( lambda ids : ast.literal_eval( ids ) )
-
+        friends_data     = read_csv( filepath )
+        followers        = friends_data[ 'following' ].apply( lambda ids : ast.literal_eval( ids ) )
         followed_friends = []
 
         for friends in followers:
@@ -215,8 +199,8 @@ class GetFromTwitter():
 
         for friend in range( c.TOP_MOST_FOLLOWED ):
             try:
-                current_friend = api.get_user( list( sorted_friend_counts.keys()   )[ friend ] )
-                current_count  =               list( sorted_friend_counts.values() )[ friend ]
+                current_friend = self.api.get_user( list( sorted_friend_counts.keys()   )[ friend ] )
+                current_count  =                    list( sorted_friend_counts.values() )[ friend ]
 
                 top_friends_followed[ 'screen_name' ].append( current_friend.screen_name )
                 top_friends_followed[ 'description' ].append( current_friend.description )
@@ -225,7 +209,6 @@ class GetFromTwitter():
                 continue
 
             if friend % 10 == 0:
-                print( "Progress: {}%"\
-                    .format( str( round( friend / c.TOP_MOST_FOLLOWED * 100, 2 ) ) ) )
+                self.utility.print_progress( friend, c.TOP_MOST_FOLLOWED )
 
-        self.save.write_to_csv_file( c.TOP_FRIENDS_FOLLOWED_CSV, DataFrame( top_friends_followed ) )
+        self.utility.write_to_file( c.TOP_FRIENDS_FOLLOWED_CSV, DataFrame( top_friends_followed ) )

@@ -1,11 +1,12 @@
 from tweepy.streaming import StreamListener
 from tweepy           import Stream
-from SaveToFile       import SaveToFile
+from Utilities        import Utilities
 
 import configurations  as c
 
 class Listener( StreamListener ):
-    save = SaveToFile()
+    # PRIVATE
+    utility = Utilities()
 
     def on_data( self, data ):
         '''
@@ -14,21 +15,29 @@ class Listener( StreamListener ):
         --------------------------------------------------
         data : Twitter information retreived by RobustStream() object
         '''
-        self.save.write_to_text_file( c.STREAM_DATA_TXT, data, 'a' )
+        self.utility.write_to_file( c.STREAM_DATA_TXT, data, 'a' )
 
         if c.START_STATUS_COUNT >= c.END_STATUS_COUNT:
             return False
         else:
             c.START_STATUS_COUNT += 1
-            print( "Progress: {}%"\
-                .format( str( round( c.START_STATUS_COUNT / c.END_STATUS_COUNT * 100, 2 ) ) ) )
+            self.utility.print_progress( c.START_STATUS_COUNT, c.END_STATUS_COUNT )
         
     def on_error( self, status ):
         print( status )
 
 
 class RobustStream():
-    def start_stream( self, authorize, listener ):
+    # PUBLIC
+    def start_stream( self, authorize ):
+        '''
+        Return : txt file containing tweet information
+        --------------------------------------------------
+        authorize : tweepy OAuthHandler object
+        listener  : tweepy Listener object (customized)
+        '''
+        listener = Listener()
+
         while ( c.START_STATUS_COUNT < c.END_STATUS_COUNT ):
             try:
                 stream = Stream( auth = authorize, listener = listener, tweet_mode = "extended" )
