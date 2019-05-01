@@ -122,11 +122,14 @@ class GetFromTwitter():
         ):
             self.utility.print_progress( tracker, c.MAX_FOLLOWER_PAGES )
 
-            for follower in page:
-                for feature in follower_data.keys():
-                    follower_data[ feature ].append( follower._json[ feature ] )
-            
-            time.sleep( 60 )
+            try:
+                for follower in page:
+                    for feature in follower_data.keys():
+                        follower_data[ feature ].append( follower._json[ feature ] )
+                
+                time.sleep( 60 )
+            except:
+                continue
 
         self.utility.write_to_file( filepath, DataFrame( follower_data ) )
 

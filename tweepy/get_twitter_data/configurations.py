@@ -13,25 +13,26 @@ CONSUMER_KEY        = credentials[ 'consumer_key'        ][0]
 CONSUMER_SECRET     = credentials[ 'consumer_secret'     ][0]
 
 # Target Twitter User
+# http://gettwitterid.com/
 TARGET_TWITTER_ID  = '331908924'
 TARGET_SCREEN_NAME = 'Blizzard_Ent'
 TARGET_TRACK_LIST  = [ 
     'Overwatch',   'Warcraft',  'Hearthstone', 'Diablo', 
-    'Blizzard',    'StarCraft', 'Esports' 
+    'Blizzard',    'StarCraft', 'Esports',     'BlizzCon' 
 ]
 
 # Stream Quantities
 START_STATUS_COUNT   = 0
-END_STATUS_COUNT     = 3
-TOTAL_FOLLOWER_COUNT = 3
+END_STATUS_COUNT     = 6000
+TOTAL_FOLLOWER_COUNT = 5000
 MAX_FOLLOWER_PAGES   = math.ceil( TOTAL_FOLLOWER_COUNT / 20 ) # Pages = Total / Number per Page
 # Follower Iterations Breakdown:
     # Refreshes = Followers Tracked / 15 (Rate Limit Hit every 15 Requests)
     # Minutes   = Refreshes * 15 (Refresh Time for Next Request is 15 Minutes)
     # Hours     = Minutes / 60
     # Example   : 750 Followers Tracked = 12.5 Hours to Complete
-FOLLOWER_ITERATONS = 3 
-TOP_MOST_FOLLOWED  = 3
+FOLLOWER_ITERATONS = 5000 
+TOP_MOST_FOLLOWED  = 150
 
 # Save File Locations
 STREAM_DATA_TXT          = '.\\..\\..\\..\\tweepy_output\\blizzard_stream_data.txt'
