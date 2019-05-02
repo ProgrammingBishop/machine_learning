@@ -3,8 +3,10 @@ import ast
 import pandas         as pd
 import configurations as c
 
-from scipy import spatial
-from Utilities       import Utilities
+from scipy                           import spatial
+from Utilities                       import Utilities
+from sklearn.feature_extraction.text import CountVectorizer
+from sklearn.decomposition           import LatentDirichletAllocation
 
 class GetDescriptors():
     # PRIVATE
@@ -57,7 +59,7 @@ class GetDescriptors():
         print( 'Next...\n' )
 
         for index, desc in enumerate( unique_desc ):
-            if index < 5:
+            if index < 3:
                 computed_similarities = []
                 a                     = self.__nlp.vocab[ str( desc ) ].vector
 
@@ -79,3 +81,35 @@ class GetDescriptors():
                 print( '\n' )
 
         self.utilities.write_to_file( c.TOKENIZED_DESCRIPTIONS, pd.DataFrame( descriptor_similarities ) )
+
+    
+    def topic_model_descriptors( self ):
+        df  = pd.read_csv( c.TOKENIZED_DESCRIPTIONS )
+        cv  = CountVectorizer( stop_words = 'english' )
+        dtm = cv.fit_transform( df[ 'top_similar' ] )
+        lda = LatentDirichletAllocation( n_components = c.CLUSTERS, random_state = 19920917 )
+
+        lda.fit( dtm )
+
+        for index, topic in enumerate( lda.components_ ):
+            print( index + 1 )
+            print( f'The top 30 words for top #{ index + 1 }' )
+            print( [ cv.get_feature_names()[ index ] for index in topic.argsort()[ -30: ] ] )
+            print( '\n' )
+
+        topic_results = lda.transform( dtm )
+        df[ 'Descriptor' ] = topic_results.argmax( axis = 1 )
+
+        print( "Define the " + str( c.CLUSTERS ) + " topics:" )
+        topic = ''
+
+        for k in range( c.CLUSTERS ):
+            topic = input( "What is topic #" + str( k + 1 ) + "? \n" )
+            c.TOPICS[ 'int_value' ].append( k )
+            c.TOPICS[ 'str_value' ].append( topic )
+
+        new_labels = dict( zip( c.TOPICS[ 'int_value' ], c.TOPICS[ 'str_value' ] ) )
+
+        df[ 'Descriptor' ].replace( new_labels, inplace = True )
+
+        self.utilities.write_to_file( c.LABELED_DESCRIPTIONS, pd.DataFrame( df ) )

@@ -14,9 +14,14 @@ FOLLOWERS_MOST_FRIENDED_PDF = '.\\..\\..\\..\\plots\\blizzard_followers_most_fri
 SPARSE_FRIENDS_MATRIX_CSV   = '.\\..\\..\\..\\exploration_output\\blizzard_sparse_matrix.csv'
 SPARSE_MATRIX_WLABELS_CSV   = '.\\..\\..\\..\\exploration_output\\blizzard_sparse_matrix_wlabels.csv'
 TOKENIZED_DESCRIPTIONS      = '.\\..\\..\\..\\exploration_output\\blizzard_tokenized_descriptions.csv'
+LABELED_DESCRIPTIONS        = '.\\..\\..\\..\\exploration_output\\blizzard_labeled_descriptions.csv'
 
 
 # Constants
 # ==================================================
 TOP_N    = 151
-CLUSTERS = 20
+CLUSTERS = 3
+TOPICS   = {
+    'int_value' : [],
+    'str_value' : []
+}
