@@ -2,13 +2,14 @@
 #### On hiatus for completion due to current obligations
 
 ## Progress
-As of April 18, 2019 the parts of this project that have been completed are the following:
+As of May 2, 2019 the parts of this project that have been completed are the following:
 
 - Obtaining the target data
 - Beginning to refactor the code into classes for reuse on other Twitter/Tweepy-related tasks. There is still much progress to be made on this part.
 - Creating a barplot for users Blizzard Entertainment's followers also follow
 - Creating the beginning feature space to be used for segmentation. This is currently a sparse matrix consisting of binary feature values reflecting on whether or not a Blizzard follower is following another user.
 - The beginning class for K-Means that can display the elbow plot for the ideal K based on the above matrix specified, create k clusters, and create a label column for which cluster a user belongs to.
+- Exploring topic modeling based on user descriptions for the sparse matrix, however this may not be as robust as I had hoped.
 
 ## TODO
 When time is sufficient, the following are tasks to still be completed:
