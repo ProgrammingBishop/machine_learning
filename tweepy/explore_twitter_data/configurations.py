@@ -36,13 +36,14 @@ credentials = os.path.join( credentials, move_up_dir + '\\twilio_credentials.csv
 credentials = read_csv( credentials, delimiter = ',', index_col = None )
 
 # Set Credentials
-ACCOUNT_SID = credentials[ 'account_sid' ][0]
-AUTH_TOKEN  = credentials[ 'auth_token'  ][0]
+ACCOUNT_SID = credentials[ 'account_sid'  ][0]
+AUTH_TOKEN  = credentials[ 'auth_token'   ][0]
+PHONUE_NUM  = credentials[ 'phone_number' ][0]
 client      = Client( ACCOUNT_SID, AUTH_TOKEN )
 
 def send_notification( message ):
     client.messages.create(
-        to    = "6308802522", 
+        to    = PHONUE_NUM, 
         from_ = "17085058854", 
         body  = message
     )
