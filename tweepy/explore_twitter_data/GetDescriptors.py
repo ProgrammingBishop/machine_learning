@@ -44,7 +44,7 @@ class GetDescriptors():
         unique_desc = []
 
         for index, desc in enumerate( data[ 'description' ] ):
-            if index < 5:
+            if index < 50:
                 self.__str = self.__nlp( u'"' + str( desc ) + '"' )
                 unique_desc += self.clean_text( str( desc ) )
 
@@ -56,10 +56,8 @@ class GetDescriptors():
             'top_similar' : []
         }
 
-        print( 'Next...\n' )
-
         for index, desc in enumerate( unique_desc ):
-            if index < 3:
+            if index < 50:
                 computed_similarities = []
                 a                     = self.__nlp.vocab[ str( desc ) ].vector
 
@@ -75,10 +73,6 @@ class GetDescriptors():
 
                 descriptor_similarities[ 'word'        ].append( desc )
                 descriptor_similarities[ 'top_similar' ].append( computed_similarities )
-
-                print( desc )
-                print( computed_similarities )
-                print( '\n' )
 
         self.utilities.write_to_file( c.TOKENIZED_DESCRIPTIONS, pd.DataFrame( descriptor_similarities ) )
 
@@ -100,7 +94,7 @@ class GetDescriptors():
         topic_results = lda.transform( dtm )
         df[ 'Descriptor' ] = topic_results.argmax( axis = 1 )
 
-        print( "Define the " + str( c.CLUSTERS ) + " topics:" )
+        print( "Define the " + str( c.CLUSTERS ) + " topics: \n" )
         topic  = ''
         topics = {
             'int_value' : [],

@@ -3,7 +3,9 @@ from PlotData                  import PlotData
 from TextAnalysis              import TextAnalysis
 from GetDescriptors            import GetDescriptors
 from DefineApplication         import DefineApplication
+
 import sys
+
 
 class RunApplication():
     def __init__( self, steps, c ):
@@ -27,14 +29,14 @@ class RunApplication():
 
             while True:
                 try:
-                    get_k = str( input( "Do you have an optimal K" + " (t / f): \n" ) ).lower()
+                    get_k = str( input( "Do you have an optimal K? (t / f): \n" ) ).lower()
 
                     if get_k == 't' or get_k == 'f':
                         if get_k == 'f':
                             explore_market.find_optimal_k( c.SPARSE_FRIENDS_MATRIX_CSV, c.TOP_N )
                             continue
                         else:
-                            user_input = input( "Enter the optimal value for K: \n" )
+                            user_input = input( "Enter the optimal value for K: " )
 
                             while True:
                                 try:
@@ -53,14 +55,14 @@ class RunApplication():
 
         # Get Topic Modeling
         # --------------------------------------------------
-        if steps[2] == 't':
-            return
+        # if steps[2] == 't':
+        #     return
 
 
         # Get Sentiment Analysis
         # --------------------------------------------------
-        if steps[3] == 't':
-            return
+        # if steps[3] == 't':
+        #     return
 
         #     print( "Generating Sparse Matrix..." )
         #     explore_market.convert_to_sparse( c.FOLLOWER_FRIENDS_CSV, c.TOP_N )
