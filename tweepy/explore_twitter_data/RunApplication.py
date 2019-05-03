@@ -2,6 +2,7 @@ from ExploreMarketSegmentation import ExploreMarketSegmentation
 from PlotData                  import PlotData
 from TextAnalysis              import TextAnalysis
 from GetDescriptors            import GetDescriptors
+from DefineApplication         import DefineApplication
 import sys
 
 class RunApplication():
@@ -9,6 +10,7 @@ class RunApplication():
         explore_market = ExploreMarketSegmentation()
         plot_data      = PlotData()
         get_desc       = GetDescriptors()
+        define_app     = DefineApplication()
 
         # Generate Barplot of Top N Followed Users
         # --------------------------------------------------

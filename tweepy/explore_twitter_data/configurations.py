@@ -20,8 +20,4 @@ LABELED_DESCRIPTIONS        = '.\\..\\..\\..\\exploration_output\\blizzard_label
 # Constants
 # ==================================================
 TOP_N    = 151
-CLUSTERS = 3
-TOPICS   = {
-    'int_value' : [],
-    'str_value' : []
-}
+CLUSTERS = 0

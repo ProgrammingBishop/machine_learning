@@ -101,14 +101,18 @@ class GetDescriptors():
         df[ 'Descriptor' ] = topic_results.argmax( axis = 1 )
 
         print( "Define the " + str( c.CLUSTERS ) + " topics:" )
-        topic = ''
+        topic  = ''
+        topics = {
+            'int_value' : [],
+            'str_value' : []
+        }
 
         for k in range( c.CLUSTERS ):
             topic = input( "What is topic #" + str( k + 1 ) + "? \n" )
-            c.TOPICS[ 'int_value' ].append( k )
-            c.TOPICS[ 'str_value' ].append( topic )
+            topics[ 'int_value' ].append( k )
+            topics[ 'str_value' ].append( topic )
 
-        new_labels = dict( zip( c.TOPICS[ 'int_value' ], c.TOPICS[ 'str_value' ] ) )
+        new_labels = dict( zip( topics[ 'int_value' ], topics[ 'str_value' ] ) )
 
         df[ 'Descriptor' ].replace( new_labels, inplace = True )
 
