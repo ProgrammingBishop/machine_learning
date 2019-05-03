@@ -3,7 +3,8 @@ from TweepyKMeans      import TweepyKMeans
 from GetDescriptors    import GetDescriptors
 from DefineApplication import DefineApplication
 from Utilities         import Utilities
-from sys               import exit
+
+import sys
 
 
 class RunApplication():
@@ -19,7 +20,7 @@ class RunApplication():
         # --------------------------------------------------
         if steps[0] == 't':
             print( "Beginning the barplot generation step..." )
-            print( '--------------------------------------------------\n\n' )
+            print( '--------------------------------------------------\n' )
 
             try:
                 plot_data.get_barplot_pdf( c )
@@ -32,16 +33,16 @@ class RunApplication():
         # --------------------------------------------------
         if steps[1] == 't':
             print( "Beginning the clustering step..." )
-            print( '--------------------------------------------------\n\n' )
+            print( '--------------------------------------------------\n' )
 
             while True:
                 try:
                     get_k = str( input( "Do you have an optimal K value to use? (t / f): " ) ).lower()
-                    print( '--------------------------------------------------\n\n' )
+                    print( '--------------------------------------------------\n' )
 
                     if get_k == 'f':
                         print( "Generating a sparse matrix to cluster for optimal K..." )
-                        print( '--------------------------------------------------\n\n' )
+                        print( '--------------------------------------------------\n' )
                         
                         try:
                             tweepy_k.find_optimal_k( c )
@@ -53,14 +54,14 @@ class RunApplication():
                             
                     if get_k == 't':
                         user_input = input( "Enter the optimal value for K: " )
-                        print( '--------------------------------------------------\n\n' )
+                        print( '--------------------------------------------------\n' )
 
                         try:
                             c.CLUSTERS = int( user_input )
 
                             # TODO: Update GetDescriptors class
-                            get_desc.get_descriptors()
-                            get_desc.topic_model_descriptors()
+                            get_desc.segment_descriptions()
+                            # get_desc.topic_model_descriptors()
                             break
 
                         except:
@@ -68,7 +69,7 @@ class RunApplication():
 
                 except:
                     print( "Something went wrong..." )
-                    exit()
+                    sys.exit()
 
 
         # Get Topic Modeling

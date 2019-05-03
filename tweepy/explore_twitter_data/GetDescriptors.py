@@ -1,12 +1,11 @@
 # Imports
 # ==================================================
 from scipy                           import spatial
-from Utilities                       import Utilities
+from Utilities                        import Utilities 
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.decomposition           import LatentDirichletAllocation
 
 import spacy
-import ast
 import pandas         as pd
 import configurations as c
 
@@ -15,71 +14,39 @@ import configurations as c
 # ==================================================
 class GetDescriptors():
     # PRIVATE
-    utilities   = Utilities()
-    punctuation = '\n\n \n\n\n!"-#$%&()--.*+,-/:;<=>?@[\\]^_`{|}~\t\n '
-    __nlp = ''
-    __str = ''
+    __util = '' 
+    __punc = ''
+    __nlp  = ''
+    __str  = ''
+    __stop = ''
     
     def __init__( self ):
-        self.__nlp = spacy.load( 'en_core_web_lg' )
+        self.__util = Utilities()
+        self.__nlp  = spacy.load( 'en_core_web_lg' )
+        self.__stop = spacy.lang.en.stop_words.STOP_WORDS
+        self.__punc = '\n\n \n\n\n!"-#$%&()--.*+,-/:;<=>?@[\\]^_`{|}~\t\n '
+
+
+    def __clean_text( self, description ):
+        sentence = []
+
+        for token in self.__nlp( description ):
+            if token.text not in self.__punc:
+                if token.text not in self.__stop:
+                    if token.text in self.__nlp.vocab:
+                        sentence.append( token.text )
+
+        return " ".join( sentence )
 
 
     # PUBLIC
-    def clean_text( self, description ):
-        return_token = []
-        token_lower  = ()
-
-        for token in self.__nlp( description ):
-            token_lower = token.text.lower()
-
-            if token_lower not in self.punctuation:
-                if token_lower not in self.__nlp.Defaults.stop_words:
-                    if token_lower in self.__nlp.vocab:
-                        if len( token_lower ) > 2:
-                            return_token.append( token_lower )
-
-        print( return_token )
-        return return_token
-
-
-    def get_descriptors( self ):
-        # Create List of all IDs6
-        data        = pd.read_csv( c.STREAM_DATAFRAME_CSV )
-        # descriptors = data[ 'description' ].apply( lambda desc : ast.literal_eval( desc ) )
-        unique_desc = []
-
-        for index, desc in enumerate( data[ 'description' ] ):
-            if index < 50:
-                self.__str = self.__nlp( u'"' + str( desc ) + '"' )
-                unique_desc += self.clean_text( str( desc ) )
-
-        unique_desc = list( set( unique_desc ) )
+    def segment_descriptions( self ):
+        data = pd.read_csv( c.STREAM_DATAFRAME_CSV )
         
-        cosine_similarity       = lambda vec1, vec2: 1 - spatial.distance.cosine( vec1, vec2 )
-        descriptor_similarities = {
-            'word'        : [],
-            'top_similar' : []
-        }
+        data.fillna( '', inplace = True )
+        data[ 'description' ] = [ self.__clean_text( desc ) for desc in data[ 'description' ] ]
 
-        for index, desc in enumerate( unique_desc ):
-            if index < 50:
-                computed_similarities = []
-                a                     = self.__nlp.vocab[ str( desc ) ].vector
-
-                for word in self.__nlp.vocab:
-                    if word.has_vector:
-                        if word.is_lower:
-                            if word.is_alpha:
-                                similarity = cosine_similarity( a, word.vector )
-                                computed_similarities.append( ( word, similarity ) )
-
-                computed_similarities = sorted( computed_similarities, key = lambda item : -item[ 1 ] )
-                computed_similarities = [ t[ 0 ].text for t in computed_similarities[ :10 ] ]
-
-                descriptor_similarities[ 'word'        ].append( desc )
-                descriptor_similarities[ 'top_similar' ].append( computed_similarities )
-
-        self.utilities.write_to_file( c.TOKENIZED_DESCRIPTIONS, pd.DataFrame( descriptor_similarities ) )
+        self.__util.write_to_file( c.STREAM_DATAFRAME_CSV, pd.DataFrame( data ), 'w' )
 
     
     def topic_model_descriptors( self ):
@@ -115,4 +82,4 @@ class GetDescriptors():
 
         df[ 'Descriptor' ].replace( new_labels, inplace = True )
 
-        self.utilities.write_to_file( c.LABELED_DESCRIPTIONS, pd.DataFrame( df ) )
+        self.__util .write_to_file( c.LABELED_DESCRIPTIONS, pd.DataFrame( df ) )

@@ -1,9 +1,9 @@
 # Imports
 # ==================================================
 from os.path        import isfile
-from sys            import exit
 from configurations import client, PHONUE_NUM
 
+import sys
 
 # Class
 # ==================================================
@@ -56,4 +56,4 @@ class Utilities():
         check_method : method to run that generates the file not found
         '''
         print( missing_file + ' in configurations is pointing to a non-existent file. Check path or generate file with the ' + check_method + ' method found in the get_from_twitter folder.' )
-        exit()
+        sys.exit()

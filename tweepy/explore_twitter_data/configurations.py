@@ -5,6 +5,7 @@ DESKTOP = 'C:\\Users\\andre\\Desktop\\'
 # Generated through get_from_twitter
 STREAM_DATA_TXT          = DESKTOP + 'tweepy_output\\blizzard_stream_data.txt'
 STREAM_DATAFRAME_CSV     = DESKTOP + 'blizzard_stream_dataframe.csv' # UPDATE AFTER PROTOTYPING
+STREAM_DATAFRAME_CSV2     = DESKTOP + 'blizzard_stream_dataframe2.csv' # UPDATE AFTER PROTOTYPING
 
 TARGET_STATUSES_TXT      = DESKTOP + 'tweepy_output\\blizzard_statuses_data.txt'
 STATUSES_DATAFRAME_CSV   = DESKTOP + 'tweepy_output\\blizzard_statuses_dataframe.csv'
