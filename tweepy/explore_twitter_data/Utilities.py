@@ -1,4 +1,6 @@
-from os.path import isfile
+from os.path        import isfile
+from sys            import exit
+from configurations import client, PHONUE_NUM
 
 class Utilities():
     # PUBLIC
@@ -9,7 +11,7 @@ class Utilities():
         progress   : itreations to track
         completion : max iterations
         '''
-        print( f"Progress: { str( round( progress / completion * 100, 2 ) ) }%" )
+        print( f'Progress: { str( round( progress / completion * 100, 2 ) ) }%' )
 
 
     def write_to_file( self, filepath, content_to_write, write_mode = 'a', index = False ):
@@ -26,3 +28,26 @@ class Utilities():
         if '.txt' in filepath:
             with open( filepath, write_mode, encoding = 'utf8' ) as f:
                     f.write( content_to_write )
+
+            
+    def send_notification( self, message ):
+        '''
+        Return : sends text message regarding status of running application
+        --------------------------------------------------
+        message : SMS to send to phone number
+        '''
+        client.messages.create(
+            to    = PHONUE_NUM, 
+            from_ = '17085058854', 
+            body  = message
+        )
+
+    def finding_file_error( self, missing_file, check_method ):
+        '''
+        Return : file not found error and suggestion on how to resolve error
+        --------------------------------------------------
+        missing_file : file method is searching for
+        check_method : method to run that generates the file not found
+        '''
+        print( missing_file + ' in configurations is pointing to a non-existent file. Check path or generate file with the ' + check_method + ' method found in the get_from_twitter folder.' )
+        exit()

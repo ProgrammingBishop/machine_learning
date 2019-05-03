@@ -1,4 +1,4 @@
-import sys
+from sys import exit
 
 class DefineApplication:
     # PRIVATE
@@ -7,16 +7,19 @@ class DefineApplication:
 
         while True:
             try:
-                input_answer = str( input( message + " (t / f): \n" ) ).lower()
+                input_answer = str( input( message + " (t / f): " ) ).lower()
+                print( '--------------------------------------------------\n\n' )
 
                 if input_answer == 't' or input_answer == 'f':
                     break
+
                 else:
-                    print( "Please answer with t of f" )
+                    print( "Please answer with t of f\n\n" )
                     continue
+
             except:
                 print( "Something went wrong..." )
-                sys.exit()
+                exit()
 
         return input_answer
 
@@ -30,8 +33,8 @@ class DefineApplication:
         program_steps = []
 
         steps = [
-            "Generate barplot of most followed users?",
-            "Cluster followers?"
+            "Generate barplot of most followed users by target profile's followers?",
+            "Cluster followers based on who they follow and how they describe themselves?"
         ]
 
         for step in steps:

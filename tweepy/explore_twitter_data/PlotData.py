@@ -1,25 +1,23 @@
 import matplotlib.pyplot as plt 
 import seaborn           as sns 
 import pandas            as pd 
-import configurations    as c
 
 
 class PlotData():
-    def get_barplot_of_top_followed( self, filepath, top_n ):
+    # PUBLIC
+    def get_barplot_pdf( self, c ):
         '''
-        Returns : pdf of barplot depicting top users followed by target's followers
+        Returns : pdf of barplot of most followed users by target profile's followers
         --------------------------------------------------
-        filepath : location to obtain data
-        top_n    : number of top most friended to plot (number + 1: upper-bound exclusive)
         '''
         sns.set( 
             style = "darkgrid",
-            rc    = { 'figure.figsize' : ( 16, round( top_n / 5, 2 ) ) } 
+            rc    = { 'figure.figsize' : ( 16, round( c.TOP_N / 5, 2 ) ) } 
         )
 
-        top_followed_df     = pd.read_csv( filepath )
+        top_followed_df     = pd.read_csv( c.TOP_FRIENDS_FOLLOWED_CSV )
         top_followed_length = len( top_followed_df )
-        top_followed_df     = top_followed_df[ 1:top_n ] # Skip 1st as it is Blizzard_Ent
+        top_followed_df     = top_followed_df[ 1:c.TOP_N ] # Skip 1st as it is Blizzard_Ent
         bar_values          = round( top_followed_df[ 'followed_by' ] / top_followed_length * 100 )
         g                   = sns.barplot( y = 'screen_name', x = 'followed_by', data = top_followed_df, color = "#00B4FF" )
 

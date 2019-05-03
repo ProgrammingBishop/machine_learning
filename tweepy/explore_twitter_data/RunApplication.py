@@ -1,56 +1,74 @@
-from ExploreMarketSegmentation import ExploreMarketSegmentation
-from PlotData                  import PlotData
-from TextAnalysis              import TextAnalysis
-from GetDescriptors            import GetDescriptors
-from DefineApplication         import DefineApplication
-
-import sys
+from PlotData          import PlotData
+from TweepyKMeans      import TweepyKMeans
+from GetDescriptors    import GetDescriptors
+from DefineApplication import DefineApplication
+from Utilities         import Utilities
+from sys               import exit
 
 
 class RunApplication():
+    # PRIVATE
     def __init__( self, steps, c ):
-        explore_market = ExploreMarketSegmentation()
-        plot_data      = PlotData()
-        get_desc       = GetDescriptors()
-        define_app     = DefineApplication()
+        util       = Utilities()
+        plot_data  = PlotData()
+        tweepy_k   = TweepyKMeans()
+        get_desc   = GetDescriptors()
+        define_app = DefineApplication()
 
-        # Generate Barplot of Top N Followed Users
+        # Generate Barplot Step
         # --------------------------------------------------
         if steps[0] == 't':
-            print( "Creating barplot...\n" )
-            plot_data.get_barplot_of_top_followed( c.TOP_FRIENDS_FOLLOWED_CSV, c.TOP_N )
+            print( "Beginning the barplot generation step..." )
+            print( '--------------------------------------------------\n\n' )
+
+            try:
+                plot_data.get_barplot_pdf( c )
+
+            except:
+                util.finding_file_error( 'TOP_FRIENDS_FOLLOWED_CSV', 'popular_friends_to_csv()' )
 
 
-        # Cluster Followers
+        # Cluster Followers Step
         # --------------------------------------------------
         if steps[1] == 't':
-            print( "Beginning K-Means Step...\n" )
-            get_k = ''
+            print( "Beginning the clustering step..." )
+            print( '--------------------------------------------------\n\n' )
 
             while True:
                 try:
-                    get_k = str( input( "Do you have an optimal K? (t / f): \n" ) ).lower()
+                    get_k = str( input( "Do you have an optimal K value to use? (t / f): " ) ).lower()
+                    print( '--------------------------------------------------\n\n' )
 
-                    if get_k == 't' or get_k == 'f':
-                        if get_k == 'f':
-                            explore_market.find_optimal_k( c.SPARSE_FRIENDS_MATRIX_CSV, c.TOP_N )
+                    if get_k == 'f':
+                        print( "Generating a sparse matrix to cluster for optimal K..." )
+                        print( '--------------------------------------------------\n\n' )
+                        
+                        try:
+                            tweepy_k.find_optimal_k( c )
                             continue
-                        else:
-                            user_input = input( "Enter the optimal value for K: " )
 
-                            while True:
-                                try:
-                                    c.CLUSTERS = int( user_input )
-                                    get_desc.get_descriptors()
-                                    get_desc.topic_model_descriptors()
-                                    break
-                                except:
-                                    print( "Error" )
-                                    sys.exit()
-                            break    
+                        except:
+                            util.finding_file_error( 'FOLLOWER_FRIENDS_CSV', 'follower_friends_to_csv()' )
+
+                            
+                    if get_k == 't':
+                        user_input = input( "Enter the optimal value for K: " )
+                        print( '--------------------------------------------------\n\n' )
+
+                        try:
+                            c.CLUSTERS = int( user_input )
+
+                            # TODO: Update GetDescriptors class
+                            get_desc.get_descriptors()
+                            get_desc.topic_model_descriptors()
+                            break
+
+                        except:
+                            util.finding_file_error( 'STREAM_DATAFRAME_CSV', 'stream_to_csv()' )
+
                 except:
                     print( "Something went wrong..." )
-                    sys.exit()
+                    exit()
 
 
         # Get Topic Modeling
@@ -65,6 +83,5 @@ class RunApplication():
         #     return
 
         #     print( "Generating Sparse Matrix..." )
-        #     explore_market.convert_to_sparse( c.FOLLOWER_FRIENDS_CSV, c.TOP_N )
-        #     explore_market.find_optimal_k( c.SPARSE_FRIENDS_MATRIX_CSV, c.TOP_N )
-        #     explore_market.create_cluster_labels( c.SPARSE_FRIENDS_MATRIX_CSV, c.CLUSTERS )
+        #     tweepy_k.convert_to_sparse( c.FOLLOWER_FRIENDS_CSV, c.TOP_N )
+        #     tweepy_k.create_cluster_labels( c.SPARSE_FRIENDS_MATRIX_CSV, c.CLUSTERS )

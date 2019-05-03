@@ -8,6 +8,7 @@ class DefineApplication:
         while True:
             try:
                 input_answer = str( input( message + " (t / f):" ) ).lower()
+                print( '\n' )
 
                 if input_answer == 't' or input_answer == 'f':
                     break
