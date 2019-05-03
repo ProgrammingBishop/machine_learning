@@ -1,5 +1,10 @@
+# Imports
+# ==================================================
 from sys import exit
 
+
+# Class
+# ==================================================
 class DefineApplication:
     # PRIVATE
     def __get_user_input( self, message ):

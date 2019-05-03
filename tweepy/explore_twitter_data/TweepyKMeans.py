@@ -1,3 +1,5 @@
+# Imports
+# ==================================================
 from collections     import Counter, OrderedDict
 from ast             import literal_eval
 from Utilities       import Utilities
@@ -8,9 +10,12 @@ import pandas            as pd
 import matplotlib.pyplot as plt
 
 
+# Class
+# ==================================================
 class TweepyKMeans():
     # PRIVATE
     __util = Utilities()
+
 
     def __following_to_sparse( self, c ):
         '''
@@ -56,6 +61,7 @@ class TweepyKMeans():
         sparse_matrix[ 'screen_name' ] = list( follower_data[ 'screen_name' ] )
 
         self.__util.write_to_file( c.SPARSE_FRIENDS_MATRIX_CSV, pd.DataFrame( sparse_matrix ) )
+
 
     # PUBLIC
     def find_optimal_k( self, c ):

@@ -1,13 +1,18 @@
-import spacy
-import ast
-import pandas         as pd
-import configurations as c
-
+# Imports
+# ==================================================
 from scipy                           import spatial
 from Utilities                       import Utilities
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.decomposition           import LatentDirichletAllocation
 
+import spacy
+import ast
+import pandas         as pd
+import configurations as c
+
+
+# Class
+# ==================================================
 class GetDescriptors():
     # PRIVATE
     utilities   = Utilities()

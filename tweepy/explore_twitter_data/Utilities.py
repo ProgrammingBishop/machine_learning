@@ -1,7 +1,12 @@
+# Imports
+# ==================================================
 from os.path        import isfile
 from sys            import exit
 from configurations import client, PHONUE_NUM
 
+
+# Class
+# ==================================================
 class Utilities():
     # PUBLIC
     def print_progress( self, progress, completion ):
@@ -41,6 +46,7 @@ class Utilities():
             from_ = '17085058854', 
             body  = message
         )
+
 
     def finding_file_error( self, missing_file, check_method ):
         '''
