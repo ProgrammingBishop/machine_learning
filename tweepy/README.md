@@ -1,43 +1,18 @@
 # Blizzard Entertainment Market Segmentation using Tweepy Library (Still in Progress)
 #### On hiatus for completion due to current obligations
 
-## Progress
-As of May 2, 2019 the parts of this project that have been completed are the following:
-
-- Obtaining the target data
-- Beginning to refactor the code into classes for reuse on other Twitter/Tweepy-related tasks. There is still much progress to be made on this part.
-- Creating a barplot for users Blizzard Entertainment's followers also follow
-- Creating the beginning feature space to be used for segmentation. This is currently a sparse matrix consisting of binary feature values reflecting on whether or not a Blizzard follower is following another user.
-- The beginning class for K-Means that can display the elbow plot for the ideal K based on the above matrix specified, create k clusters, and create a label column for which cluster a user belongs to.
-
 ## TODO
-When time is sufficient, the following are tasks to still be completed:
 
-- Exploring topic modeling based on user descriptions for the sparse matrix, however this may not be as robust as I had hoped.
-- GetDescriptors.py is a rough sandbox environment to explore spacy deeper. This file will be refactroed greatly or even possibly removed.
-- Finalize refactoring of classes, the user interface through the command line, and the reuse of these classes for other Twitter/Tweepy-related tasks. Current code is operational, but not optimized enough for recycling, scalability, and maintainability.
-- Finalize the feature space based on word association. This will be handled with the Natural Language Toolkit (NLTK) library. This will bring diversity to the current sparse matrix and most likely update the prototype labels set for the users. The additional features will be created based on user descriptions and location.
-- Using the NLTK library to analyze tweets based on popular topics and sentiment of users (positive or negative), especially to understand which tweeted topics are most successful or least successful.
-- Create a final report for these findings
-
-## Purpose
-Using Tweepy and Python the goal of this project is to understand Blizzard Entertainment's followers and engagement through the Twitter platform. 
-
-#### The target information to retrieve include:
-
-- Follower data, specifically screen name (for lookup in other methods), description, and location
-- Blizzard Entertainment's profile tweets
-- Tweets streaming in related to Blizzard Entertainment and various tracked topics related to Blizzard Entertainment's products
-- The users that Blizzard Entertainment's followers are following
+- Final refactoring of application. This includes possibly simplifying functions, possibly creating new functions, possibly implementing more efficient processes to replace naive ones, etc.
+- Append k - k dependent on optimal segments - additional features to the user sparse matrix. These features will be the category in which a user describes themself in the descriptor data. These categories will be generated via topic modeling.
+- Perform sentiment analysis and topic modeling/distribution using Blizzard Entertainment's tweets.
+- Perform sentiment analysis and topic modeling/distribution using the follower's tweets as they relate to Blizzard Entertainment. 
+- Write a report that offers an overview of Blizzard Entertainment, the application, the purpose of the application, the questions the application aims to answer, the answers found in this analysis as well as statistical significance (as this is a small sample of Blizzard's follower base), and short comings or future updates to that can bring more effectiveness to this analysis and application.
 
 #### By leveraging this information, the following questions can be explored further:
 
-- Who do followers of Blizzard Entertainment tend to also follow?
-- What products of Blizzard Entertainment are followed? Which are popular or not so popular?
+- Who do followers of Blizzard Entertainment tend to also follow? This would be valuable information to a company to know if there are other products, enterprises, or celebrities they can reach out to for endorsement.
+- What products of Blizzard Entertainment are followed? Which are popular or not so popular? This will give a company an idea of what is working, what is not working, and possibly strategies to reallocate revenue to enhance marketing in the areas that require it.
 - Can the other users that Blizzard Entertainment's followers also follow be categorized by industry? Are they related to the gaming industry?
-- Are there competitors based on who users also follow? If so are they similar or different to Blizzard Entertainment?
-- What products, organizations, or celebrities can be targeted to endorse Blizzard Entertainment?
-- Is there a reason some Blizzard products are followed more than others?
-- How does the market diversify between segments?
-- Are there similar interests or disinterests between segments?
-- Are there opportunities from other users Blizzard Entertainment's followers also follow? Essentially what do they do different that Blizzard Entertainment is not doing but could be doing for increased user follower engagement?
+- Are there competitors based on who users also follow? If so are they similar or different to Blizzard Entertainment? This will enable a company to evaluate what they are doing differently that could be causing less effective approaches, what they can be doing better, or what they are already being successful in.
+- How does the market diversify between segments? Are there similar interests or disinterests between segments?

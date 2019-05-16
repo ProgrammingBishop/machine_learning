@@ -60,6 +60,8 @@ class RunApplication():
                             c.CLUSTERS = int( user_input )
 
                             # TODO: Update GetDescriptors class
+                            print( "Cleaning up user descriptions..." )
+                            print( '--------------------------------------------------\n' )
                             get_desc.segment_descriptions()
                             # get_desc.topic_model_descriptors()
                             break

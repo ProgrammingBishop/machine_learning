@@ -48,7 +48,8 @@ class GetDescriptors():
 
         self.__util.write_to_file( c.STREAM_DATAFRAME_CSV, pd.DataFrame( data ), 'w' )
 
-    
+
+    # TODO Refactor This
     def topic_model_descriptors( self ):
         df  = pd.read_csv( c.TOKENIZED_DESCRIPTIONS )
         cv  = CountVectorizer( stop_words = 'english' )
